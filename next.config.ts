@@ -4,10 +4,8 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactCompiler: true,
 
-  // PWA Configuration
-  experimental: {
-    serverComponentsExternalPackages: ['next-pwa'],
-  },
+  // PWA Configuration - Fixed for Next.js 16+
+  serverExternalPackages: ['next-pwa'],
 
   // Headers for PWA
   async headers() {

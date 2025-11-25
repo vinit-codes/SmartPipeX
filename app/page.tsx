@@ -1,107 +1,170 @@
-import Image from 'next/image';
+'use client';
+
 import Link from 'next/link';
-import { Button } from '@/components';
+import { motion } from 'framer-motion';
+import {
+  Activity,
+  BarChart3,
+  AlertTriangle,
+  Settings,
+  ArrowRight,
+} from 'lucide-react';
+
+const features = [
+  {
+    name: 'Real-time Monitoring',
+    description:
+      'Live sensor data streaming with intelligent leak detection and severity scoring.',
+    icon: Activity,
+    color: 'bg-blue-500',
+  },
+  {
+    name: 'Analytics & Insights',
+    description:
+      'Interactive charts and AI-powered predictive maintenance recommendations.',
+    icon: BarChart3,
+    color: 'bg-green-500',
+  },
+  {
+    name: 'Alert Management',
+    description:
+      'Categorized alerts with severity levels and comprehensive filtering options.',
+    icon: AlertTriangle,
+    color: 'bg-yellow-500',
+  },
+  {
+    name: 'Smart Settings',
+    description:
+      'Configurable thresholds and notification preferences with localStorage persistence.',
+    icon: Settings,
+    color: 'bg-purple-500',
+  },
+];
+
+const quickLinks = [
+  {
+    name: 'Dashboard',
+    href: '/dashboard',
+    description: 'Main monitoring interface',
+  },
+  {
+    name: 'Analytics',
+    href: '/dashboard/analytics',
+    description: 'Charts & insights',
+  },
+  { name: 'Alerts', href: '/dashboard/alerts', description: 'System alerts' },
+  {
+    name: 'Settings',
+    href: '/dashboard/settings',
+    description: 'Configuration',
+  },
+];
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-      <main className="mx-auto max-w-4xl px-8 py-16 text-center">
-        <div className="mb-8">
-          <Image
-            className="mx-auto mb-8 dark:invert"
-            src="/next.svg"
-            alt="Next.js logo"
-            width={150}
-            height={30}
-            priority
-          />
-          <h1 className="mb-4 text-5xl font-bold text-gray-900">
-            Leak Detection System
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      <main className="mx-auto max-w-7xl px-6 py-12">
+        {/* Hero Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-16 text-center"
+        >
+          <div className="mb-6 flex items-center justify-center">
+            <motion.div
+              className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 shadow-lg"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <Activity className="h-8 w-8 text-white" />
+            </motion.div>
+          </div>
+
+          <h1 className="mb-6 text-6xl font-bold text-gray-900">
+            Smart<span className="text-blue-600">PipeX</span>
           </h1>
-          <p className="mx-auto mb-8 max-w-2xl text-xl text-gray-600">
-            A modern Next.js 14 application with App Router, TypeScript, and
-            Tailwind CSS. Built with clean architecture and best practices.
+          <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed text-gray-600">
+            Intelligent pipeline leak detection and monitoring system with
+            real-time analytics, predictive maintenance, and comprehensive alert
+            management.
           </p>
+        </motion.div>
+
+        {/* Features Grid */}
+        <div className="mb-16 grid gap-8 md:grid-cols-2 lg:grid-cols-4">
+          {features.map((feature, index) => {
+            const Icon = feature.icon;
+            return (
+              <motion.div
+                key={feature.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className="relative rounded-2xl border border-gray-100 bg-white p-6 shadow-lg transition-shadow hover:shadow-xl"
+              >
+                <div
+                  className={`inline-flex h-12 w-12 items-center justify-center rounded-xl ${feature.color} mb-4`}
+                >
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="mb-3 text-lg font-semibold text-gray-900">
+                  {feature.name}
+                </h3>
+                <p className="text-sm leading-relaxed text-gray-600">
+                  {feature.description}
+                </p>
+              </motion.div>
+            );
+          })}
         </div>
 
-        <div className="mb-12 grid gap-6 md:grid-cols-3">
-          <div className="rounded-lg bg-white p-6 shadow-md">
-            <div className="mb-4 text-3xl">⚡</div>
-            <h3 className="mb-2 text-lg font-semibold">Fast Performance</h3>
-            <p className="text-gray-600">
-              Built with Next.js 14 App Router for optimal performance and SEO.
-            </p>
-          </div>
-          <div className="rounded-lg bg-white p-6 shadow-md">
-            <div className="mb-4 text-3xl">🎨</div>
-            <h3 className="mb-2 text-lg font-semibold">Beautiful UI</h3>
-            <p className="text-gray-600">
-              Styled with Tailwind CSS for rapid and consistent design.
-            </p>
-          </div>
-          <div className="rounded-lg bg-white p-6 shadow-md">
-            <div className="mb-4 text-3xl">🔧</div>
-            <h3 className="mb-2 text-lg font-semibold">Type Safe</h3>
-            <p className="text-gray-600">
-              Full TypeScript support with ESLint and Prettier configuration.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
+        {/* CTA Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.5 }}
+          className="mb-16 text-center"
+        >
           <Link href="/dashboard">
-            <Button size="lg" className="w-full sm:w-auto">
-              View Dashboard
-            </Button>
+            <motion.div
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="inline-flex items-center rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg transition-colors hover:bg-blue-700"
+            >
+              Launch Dashboard
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </motion.div>
           </Link>
-          <a
-            href="https://nextjs.org/docs"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Button variant="outline" size="lg" className="w-full sm:w-auto">
-              Documentation
-            </Button>
-          </a>
-        </div>
+        </motion.div>
 
-        <div className="mt-16 rounded-lg bg-white p-8 shadow-md">
-          <h2 className="mb-4 text-2xl font-semibold text-gray-900">
-            Project Structure
+        {/* Quick Links */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="rounded-3xl border border-gray-100 bg-white p-8 shadow-xl"
+        >
+          <h2 className="mb-6 text-center text-2xl font-semibold text-gray-900">
+            Quick Access
           </h2>
-          <div className="grid gap-4 text-left md:grid-cols-2">
-            <div>
-              <code className="rounded bg-gray-100 px-2 py-1 text-sm">
-                /app/dashboard
-              </code>
-              <p className="mt-1 text-sm text-gray-600">Dashboard pages</p>
-            </div>
-            <div>
-              <code className="rounded bg-gray-100 px-2 py-1 text-sm">
-                /app/api
-              </code>
-              <p className="mt-1 text-sm text-gray-600">API routes</p>
-            </div>
-            <div>
-              <code className="rounded bg-gray-100 px-2 py-1 text-sm">
-                /components
-              </code>
-              <p className="mt-1 text-sm text-gray-600">Reusable components</p>
-            </div>
-            <div>
-              <code className="rounded bg-gray-100 px-2 py-1 text-sm">
-                /lib
-              </code>
-              <p className="mt-1 text-sm text-gray-600">Utility libraries</p>
-            </div>
-            <div>
-              <code className="rounded bg-gray-100 px-2 py-1 text-sm">
-                /utils
-              </code>
-              <p className="mt-1 text-sm text-gray-600">Helper functions</p>
-            </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {quickLinks.map((link) => (
+              <Link key={link.name} href={link.href}>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="rounded-xl border border-gray-200 p-4 transition-all hover:border-blue-300 hover:shadow-md"
+                >
+                  <h3 className="mb-1 font-semibold text-gray-900">
+                    {link.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">{link.description}</p>
+                </motion.div>
+              </Link>
+            ))}
           </div>
-        </div>
+        </motion.div>
       </main>
     </div>
   );

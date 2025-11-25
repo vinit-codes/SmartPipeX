@@ -328,7 +328,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="p-8">
         <div className="mx-auto max-w-4xl">
           <div className="flex h-96 items-center justify-center">
             <motion.div
@@ -348,7 +348,7 @@ export default function SettingsPage() {
   const isCustom = SettingsManager.hasCustomSettings();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+    <div className="p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"

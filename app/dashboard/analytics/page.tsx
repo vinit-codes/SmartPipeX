@@ -74,18 +74,7 @@ interface PredictiveApiResponse {
   message?: string;
 }
 
-// Tooltip props interfaces
-interface TooltipProps {
-  active?: boolean;
-  payload?: Array<{
-    value: number;
-    dataKey: string;
-    color: string;
-    payload?: any;
-    name?: string;
-  }>;
-  label?: string;
-}
+// Animation variants
 
 // Animation variants
 const containerVariants = {
@@ -298,7 +287,7 @@ export default function AnalyticsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="p-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex h-96 items-center justify-center">
             <motion.div
@@ -317,7 +306,7 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+      <div className="p-8">
         <div className="mx-auto max-w-7xl">
           <div className="flex h-96 items-center justify-center">
             <div className="rounded-lg bg-red-50 p-6 text-center">
@@ -340,7 +329,7 @@ export default function AnalyticsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-8">
+    <div className="p-8">
       <motion.div
         variants={containerVariants}
         initial="hidden"
