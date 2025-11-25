@@ -51,6 +51,7 @@ User Access → Dashboard → Live Data View → Alert Notifications → Action 
 ```
 
 **Steps:**
+
 1. User navigates to `/dashboard`
 2. System loads real-time sensor data
 3. Dashboard displays current flow rates, leak status, and system efficiency
@@ -65,6 +66,7 @@ User → Analytics Page → Historical Data → Chart Analysis → Report Genera
 ```
 
 **Steps:**
+
 1. User navigates to `/dashboard/analytics`
 2. System loads configurable historical data (200-500 samples)
 3. User views:
@@ -82,6 +84,7 @@ Data Collection → Pattern Analysis → Risk Assessment → Recommendations →
 ```
 
 **Steps:**
+
 1. System analyzes last 50 readings automatically
 2. Calculates risk score using: `(leakFrequency * 4) + (avgFlowDiff * 5)`
 3. Categorizes risk level (Low/Moderate/High)
@@ -95,6 +98,7 @@ Leak Detection → Severity Assessment → Alert Generation → User Notificatio
 ```
 
 **Steps:**
+
 1. System detects leak when `inputFlow - outputFlow > threshold`
 2. Calculates severity score with consecutive leak tracking
 3. Categorizes alert (Mild/Medium/Critical)
@@ -109,6 +113,7 @@ User → Settings Page → Parameter Adjustment → Validation → Storage → S
 ```
 
 **Steps:**
+
 1. User navigates to `/dashboard/settings`
 2. Adjusts leak threshold (0.1-10.0 L/min)
 3. Configures system responses (auto-shutoff, alerts)
@@ -129,12 +134,12 @@ The system uses sophisticated mock data generation to simulate realistic pipelin
 ```typescript
 interface SensorReading {
   timestamp: string;
-  inputFlow: number;        // 0-4 L/min with realistic variations
-  outputFlow: number;       // Calculated based on input with leak simulation
-  leakDetected: boolean;    // Threshold-based detection
-  waterLoss: number;        // inputFlow - outputFlow
+  inputFlow: number; // 0-4 L/min with realistic variations
+  outputFlow: number; // Calculated based on input with leak simulation
+  leakDetected: boolean; // Threshold-based detection
+  waterLoss: number; // inputFlow - outputFlow
   severity?: 'mild' | 'medium' | 'critical';
-  severityScore?: number;   // Calculated risk score
+  severityScore?: number; // Calculated risk score
 }
 ```
 
@@ -165,6 +170,7 @@ interface SensorReading {
 ## API Specifications
 
 ### Base URL
+
 ```
 http://localhost:3000/api/data
 ```
@@ -176,6 +182,7 @@ GET /api/data/live
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -199,9 +206,11 @@ GET /api/data/history?count=300
 ```
 
 **Query Parameters:**
+
 - `count` (optional): Number of historical readings (200-500)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -228,10 +237,12 @@ GET /api/data/alerts?count=500&severity=all
 ```
 
 **Query Parameters:**
+
 - `count` (optional): Sample size to analyze (200-1000)
 - `severity` (optional): Filter by severity (`mild|medium|critical|all`)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -270,9 +281,11 @@ GET /api/data/predict?samples=50
 ```
 
 **Query Parameters:**
+
 - `samples` (optional): Analysis sample size (10-100)
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -319,6 +332,7 @@ ESP32 Sensors → Wi-Fi/Bluetooth → Data Ingestion API → Database → Dashbo
 ### Phase 1: Hardware Setup
 
 **Required Components:**
+
 - ESP32 development board
 - Flow rate sensors (2x for input/output measurement)
 - Pressure sensors (optional, for enhanced detection)
@@ -326,6 +340,7 @@ ESP32 Sensors → Wi-Fi/Bluetooth → Data Ingestion API → Database → Dashbo
 - Power management system
 
 **Sensor Integration:**
+
 ```cpp
 // ESP32 sensor reading code structure
 struct SensorData {
@@ -340,12 +355,14 @@ struct SensorData {
 ### Phase 2: Communication Protocol
 
 **Data Transmission:**
+
 - **Protocol**: HTTP POST to `/api/ingest`
 - **Format**: JSON payload
 - **Frequency**: 1-second intervals (configurable)
 - **Reliability**: Retry logic with exponential backoff
 
 **Payload Structure:**
+
 ```json
 {
   "deviceId": "ESP32_PIPELINE_001",
@@ -366,6 +383,7 @@ struct SensorData {
 ### Phase 3: Data Ingestion API
 
 **New Endpoint:**
+
 ```http
 POST /api/ingest
 Content-Type: application/json
@@ -373,6 +391,7 @@ Authorization: Bearer <device-token>
 ```
 
 **Processing Flow:**
+
 1. Authenticate device token
 2. Validate sensor data format
 3. Apply calibration corrections
@@ -383,6 +402,7 @@ Authorization: Bearer <device-token>
 ### Phase 4: Database Integration
 
 **Schema Extensions:**
+
 ```sql
 -- Device management
 CREATE TABLE devices (
@@ -414,16 +434,19 @@ CREATE TABLE sensor_readings (
 ### Phase 5: Enhanced Features
 
 **Real-time Calibration:**
+
 - Remote calibration updates
 - Automatic drift detection
 - Multi-point calibration curves
 
 **Edge Computing:**
+
 - Local leak detection on ESP32
 - Reduced network traffic
 - Offline operation capability
 
 **Device Management:**
+
 - Fleet monitoring dashboard
 - Firmware update system
 - Remote configuration
@@ -468,38 +491,45 @@ CREATE TABLE sensor_readings (
 ## Technology Stack
 
 ### Frontend Framework
+
 - **Next.js 14**: React framework with App Router
 - **TypeScript**: Type-safe JavaScript
 - **React 18**: Latest React with Concurrent Features
 
 ### Styling & UI
+
 - **Tailwind CSS**: Utility-first CSS framework
 - **Framer Motion**: Animation and transitions
 - **Recharts**: Data visualization library
 - **Lucide Icons**: Modern icon library
 
 ### State Management
+
 - **React Hooks**: useState, useEffect, useContext
 - **Context API**: Global state for sensor streaming
 - **localStorage**: Settings persistence
 
 ### Development Tools
+
 - **ESLint**: Code linting and quality
 - **Prettier**: Code formatting
 - **TypeScript Compiler**: Type checking
 - **Turbopack**: Fast build system (Next.js 14)
 
 ### API & Data
+
 - **Next.js API Routes**: Server-side endpoints
 - **JSON**: Data exchange format
 - **Mock Data Generation**: Sophisticated simulation
 
 ### Deployment & Infrastructure
+
 - **Vercel**: Hosting platform (recommended)
 - **Node.js**: Runtime environment
 - **Git**: Version control
 
 ### Future Integrations
+
 - **PostgreSQL/SQLite**: Database for production
 - **Redis**: Caching and session management
 - **WebSockets**: Real-time communication
@@ -869,18 +899,21 @@ CREATE TABLE sensor_readings (
 ### Immediate Development Priorities
 
 #### 1. Database Integration (Week 1-2)
+
 - **Setup PostgreSQL**: Production database configuration
 - **Schema Migration**: Convert mock data structure to tables
 - **Connection Layer**: Database connection and query optimization
 - **Data Persistence**: Historical data storage and retrieval
 
 #### 2. Real-time WebSocket Implementation (Week 2-3)
+
 - **WebSocket Server**: Real-time data streaming
 - **Client Integration**: Dashboard live updates without polling
 - **Connection Management**: Reconnection logic and error handling
 - **Performance Optimization**: Efficient data broadcasting
 
 #### 3. Authentication & Security (Week 3-4)
+
 - **User Management**: Login/logout functionality
 - **JWT Implementation**: Secure token-based authentication
 - **Role-based Access**: Admin/operator/viewer permissions
@@ -889,12 +922,14 @@ CREATE TABLE sensor_readings (
 ### Hardware Integration Phase
 
 #### 4. ESP32 Development (Week 4-6)
+
 - **Sensor Integration**: Flow rate and pressure sensors
 - **Communication Protocol**: Reliable data transmission
 - **Edge Processing**: Local leak detection capabilities
 - **Power Management**: Battery and sleep optimization
 
 #### 5. Device Management System (Week 6-8)
+
 - **Device Registration**: Automatic device discovery
 - **Fleet Management**: Multiple device monitoring
 - **Remote Configuration**: OTA updates and settings
@@ -903,12 +938,14 @@ CREATE TABLE sensor_readings (
 ### Advanced Features Phase
 
 #### 6. Enhanced Analytics (Week 8-10)
+
 - **Machine Learning**: Pattern recognition algorithms
 - **Advanced Predictions**: Long-term trend analysis
 - **Custom Reports**: User-defined reporting system
 - **Data Export**: Multiple format support (CSV, PDF, Excel)
 
 #### 7. Alerting & Notifications (Week 10-12)
+
 - **Multi-channel Alerts**: Email, SMS, Slack integration
 - **Escalation Rules**: Progressive alert escalation
 - **Alert Management**: Acknowledgment and resolution tracking
@@ -917,12 +954,14 @@ CREATE TABLE sensor_readings (
 ### Production Deployment
 
 #### 8. Infrastructure Setup (Week 12-14)
+
 - **Docker Containerization**: Application packaging
 - **CI/CD Pipeline**: Automated deployment
 - **Monitoring & Logging**: Application performance monitoring
 - **Backup Strategy**: Data backup and recovery procedures
 
 #### 9. Performance Optimization (Week 14-16)
+
 - **Caching Strategy**: Redis implementation
 - **Database Optimization**: Query performance tuning
 - **CDN Integration**: Static asset optimization
@@ -931,18 +970,21 @@ CREATE TABLE sensor_readings (
 ### Long-term Roadmap
 
 #### Quarter 2
+
 - **Mobile Application**: React Native companion app
 - **API v2**: GraphQL implementation
 - **Advanced ML**: Predictive failure analysis
 - **Integration Hub**: Third-party system integrations
 
 #### Quarter 3
+
 - **Multi-tenant Architecture**: Support for multiple organizations
 - **Advanced Analytics**: Custom dashboard builder
 - **IoT Platform**: Support for multiple sensor types
 - **Compliance**: Industry standard certifications
 
 #### Quarter 4
+
 - **AI/ML Platform**: Machine learning model training
 - **Edge Computing**: Local processing capabilities
 - **Blockchain**: Data integrity and audit trails
@@ -951,6 +993,7 @@ CREATE TABLE sensor_readings (
 ### Technical Debt & Maintenance
 
 #### Ongoing Tasks
+
 - **Code Quality**: Regular refactoring and optimization
 - **Security Updates**: Dependency updates and security patches
 - **Documentation**: Keep technical documentation current
@@ -962,6 +1005,7 @@ CREATE TABLE sensor_readings (
 ## Contributing
 
 ### Development Guidelines
+
 1. Follow TypeScript strict mode practices
 2. Use consistent naming conventions
 3. Write comprehensive tests for new features
@@ -969,6 +1013,7 @@ CREATE TABLE sensor_readings (
 5. Follow the established project structure
 
 ### Deployment Checklist
+
 - [ ] Environment variables configured
 - [ ] Database migrations completed
 - [ ] SSL certificates installed
@@ -978,4 +1023,4 @@ CREATE TABLE sensor_readings (
 
 ---
 
-*This documentation is a living document and will be updated as the SmartPipeX system evolves and new features are implemented.*
+_This documentation is a living document and will be updated as the SmartPipeX system evolves and new features are implemented._
