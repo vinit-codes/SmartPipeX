@@ -309,6 +309,110 @@ GET /api/data/predict?samples=50
 }
 ```
 
+### 5. Hardware Data Ingestion Endpoint
+
+```http
+POST /api/ingest
+```
+
+**Headers:**
+
+- `Content-Type: application/json`
+- `Authorization: Bearer <device-token>` (for production)
+
+**Request Body:**
+
+```json
+{
+  "inputFlow": 3.24,
+  "outputFlow": 2.89,
+  "timestamp": "2025-11-25T10:30:00.000Z",
+  "deviceId": "ESP32_PIPELINE_001"
+}
+```
+
+**Response (Success):**
+
+```json
+{
+  "success": true,
+  "message": "Sensor data ingested successfully",
+  "data": {
+    "processed": {
+      "timestamp": "2025-11-25T10:30:00.000Z",
+      "inputFlow": 3.24,
+      "outputFlow": 2.89,
+      "leakDetected": true,
+      "waterLoss": 0.35,
+      "severity": "mild",
+      "severityScore": 2.2,
+      "deviceId": "ESP32_PIPELINE_001",
+      "receivedAt": "2025-11-25T05:24:52.285Z"
+    },
+    "stored": true,
+    "totalReadings": 42
+  },
+  "metadata": {
+    "receivedAt": "2025-11-25T05:24:52.285Z",
+    "deviceId": "ESP32_PIPELINE_001",
+    "processingTime": 15
+  }
+}
+```
+
+**Response (Error):**
+
+```json
+{
+  "success": false,
+  "error": "Invalid payload format",
+  "message": "Expected { inputFlow: number, outputFlow: number, timestamp: string }",
+  "received": ["inputFlow", "outputFlow", "invalidField"]
+}
+```
+
+### 6. Retrieve Ingested Data Endpoint
+
+```http
+GET /api/ingest?limit=50&deviceId=ESP32_001
+```
+
+**Query Parameters:**
+
+- `limit` (optional): Maximum readings to return (1-500, default: 50)
+- `deviceId` (optional): Filter by specific device ID
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "data": {
+    "readings": [
+      {
+        "timestamp": "2025-11-25T10:30:00.000Z",
+        "inputFlow": 3.24,
+        "outputFlow": 2.89,
+        "leakDetected": true,
+        "waterLoss": 0.35,
+        "severity": "mild",
+        "severityScore": 2.2,
+        "deviceId": "ESP32_PIPELINE_001",
+        "receivedAt": "2025-11-25T05:24:52.285Z"
+      }
+    ],
+    "totalCount": 42,
+    "devices": ["ESP32_PIPELINE_001", "ESP32_PIPELINE_002"],
+    "lastUpdate": "2025-11-25T05:24:52.285Z"
+  },
+  "message": "Retrieved 1 ingested sensor readings",
+  "query": {
+    "limit": 50,
+    "deviceId": "ESP32_001"
+  }
+}
+```
+
 ### Error Response Format
 
 ```json
