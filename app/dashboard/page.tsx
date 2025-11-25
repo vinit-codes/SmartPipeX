@@ -3,6 +3,11 @@
 import { Button, useSensorStream } from '@/components';
 import { formatDate } from '@/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  PWAInstallPrompt,
+  PWAUpdateNotification,
+  PWAStatusBadge,
+} from '@/components/PWAComponents';
 
 // Animation variants
 const cardVariants = {
@@ -260,23 +265,34 @@ export default function DashboardPage() {
         className="mx-auto max-w-7xl"
       >
         {/* Header Section */}
-        <div className="mb-8">
-          <motion.h1
-            initial={{ opacity: 0, x: -20 }}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <motion.h1
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="text-4xl font-bold text-gray-900"
+            >
+              Pipeline Monitoring Dashboard
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="mt-2 text-gray-600"
+            >
+              Real-time leak detection system - {currentDate}
+            </motion.p>
+          </div>
+
+          {/* PWA Status */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-4xl font-bold text-gray-900"
+            transition={{ delay: 0.4, duration: 0.6 }}
           >
-            Pipeline Monitoring Dashboard
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.3, duration: 0.6 }}
-            className="mt-2 text-gray-600"
-          >
-            Real-time leak detection system - {currentDate}
-          </motion.p>
+            <PWAStatusBadge />
+          </motion.div>
         </div>
 
         {/* Leak Alert Banner */}
@@ -593,6 +609,10 @@ export default function DashboardPage() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* PWA Components */}
+      <PWAInstallPrompt />
+      <PWAUpdateNotification />
     </div>
   );
 }

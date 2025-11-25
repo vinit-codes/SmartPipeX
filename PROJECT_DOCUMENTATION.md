@@ -39,6 +39,9 @@
 - 🎨 **Modern UI/UX** with Framer Motion animations
 - 📱 **Responsive Design** supporting desktop and mobile
 - 🔔 **Multi-channel Alerts** (Email, Telegram, Dashboard)
+- 📲 **Progressive Web App (PWA)** with offline functionality and installable experience
+- 🚀 **Service Worker** for caching and background sync
+- 🏠 **Add to Home Screen** for native app-like experience
 
 ---
 
@@ -631,6 +634,16 @@ CREATE TABLE sensor_readings (
 - **Vercel**: Hosting platform (recommended)
 - **Node.js**: Runtime environment
 - **Git**: Version control
+
+### Progressive Web App (PWA)
+
+- **Service Worker**: Advanced caching and offline functionality
+- **Web App Manifest**: Installable app configuration
+- **PWA Hooks**: Custom React hooks for PWA features
+- **Offline Support**: Cached dashboard and API responses
+- **Background Sync**: Data synchronization when online
+- **Push Notifications**: Critical alert notifications (ready for implementation)
+- **Install Prompts**: Smart app installation suggestions
 
 ### Future Integrations
 

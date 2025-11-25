@@ -1,0 +1,7 @@
+
+    <svg width="384" height="384" viewBox="0 0 384 384" xmlns="http://www.w3.org/2000/svg">
+      <rect width="384" height="384" fill="#3b82f6"/>
+      <rect x="96" y="96" width="192" height="192" fill="#ffffff" rx="48"/>
+      <text x="192" y="216" text-anchor="middle" fill="#3b82f6" font-family="Arial" font-size="48" font-weight="bold">SP</text>
+    </svg>
+  
