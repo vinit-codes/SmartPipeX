@@ -16,7 +16,7 @@ export async function GET() {
       // Try to get latest reading from database
       const dbService = await getDatabaseService();
       const dbReading = await dbService.getLatestReading();
-      
+
       if (dbReading) {
         latestReading = {
           timestamp: dbReading.timestamp,
@@ -43,10 +43,10 @@ export async function GET() {
 
     return NextResponse.json(
       ApiResponseHelper.success(
-        { 
-          ...latestReading, 
+        {
+          ...latestReading,
           source,
-          databaseStatus: source === 'database' ? 'connected' : 'unavailable'
+          databaseStatus: source === 'database' ? 'connected' : 'unavailable',
         },
         `Latest sensor reading retrieved successfully from ${source}`
       )

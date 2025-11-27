@@ -2,11 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDatabaseService } from '@/lib/database';
 
 export async function POST(request: NextRequest) {
-  console.log('🚀 [INGEST] Received POST request');
+  console.log('🚀 [INGEST-V2] Received POST request');
 
   try {
     const body = await request.json();
-    console.log('📥 [INGEST] Request body:', body);
+    console.log('📥 [INGEST-V2] Request body:', body);
 
     if (!body.inputFlow || !body.outputFlow || !body.timestamp) {
       return NextResponse.json(
@@ -42,24 +42,18 @@ export async function POST(request: NextRequest) {
     try {
       const dbService = await getDatabaseService();
       await dbService.storeSensorReading(sensorReading);
-      console.log('✅ [INGEST] Stored in MongoDB');
+      console.log('✅ [INGEST-V2] Stored in MongoDB');
 
       return NextResponse.json(
         {
           success: true,
           message: 'Data stored in MongoDB',
-          data: {
-            processed: {
-              ...sensorReading,
-              receivedAt: sensorReading.receivedAt.toISOString(),
-            },
-            stored: true,
-          },
+          data: sensorReading,
         },
         { status: 201 }
       );
     } catch (dbError) {
-      console.error('⚠️ [INGEST] Database error:', dbError);
+      console.error('⚠️ [INGEST-V2] Database error:', dbError);
       return NextResponse.json(
         {
           success: false,
@@ -70,7 +64,7 @@ export async function POST(request: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('❌ [INGEST] Error:', error);
+    console.error('❌ [INGEST-V2] Error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -79,14 +73,4 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
-}
-
-export async function GET() {
-  return NextResponse.json({
-    success: true,
-    message: 'Ingest API is running',
-    endpoints: {
-      POST: 'Send sensor data: { inputFlow, outputFlow, timestamp, deviceId }',
-    },
-  });
 }
