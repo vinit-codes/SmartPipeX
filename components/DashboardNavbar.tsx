@@ -10,6 +10,7 @@ import {
   Settings,
   Home,
   Activity,
+  Droplets,
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -31,6 +32,12 @@ const navigation = [
     href: '/dashboard/alerts',
     icon: AlertTriangle,
     description: 'System alerts',
+  },
+  {
+    name: 'Consumption',
+    href: '/dashboard/consumption',
+    icon: Droplets,
+    description: 'Water usage tracking',
   },
   {
     name: 'Settings',

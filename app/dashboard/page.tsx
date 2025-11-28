@@ -8,6 +8,9 @@ import {
   PWAUpdateNotification,
   PWAStatusBadge,
 } from '@/components/PWAComponents';
+import { useConsumptionSummary } from '@/hooks/useConsumptionSummary';
+import Link from 'next/link';
+import { Droplets, TrendingUp, TrendingDown } from 'lucide-react';
 
 // Animation variants
 const cardVariants = {
@@ -226,6 +229,9 @@ export default function DashboardPage() {
     stop,
     lastUpdated,
   } = useSensorStream();
+
+  const { summary: consumptionSummary, loading: consumptionLoading } =
+    useConsumptionSummary();
 
   // Use real-time reading or fallback to generated data for display
   const displayReading = currentReading || {
@@ -581,6 +587,86 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+        </motion.div>
+
+        {/* Water Consumption Summary */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9, duration: 0.6 }}
+          className="mb-8 rounded-xl bg-white p-6 shadow-lg"
+        >
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center text-xl font-semibold text-gray-900">
+              <Droplets className="mr-2 h-5 w-5 text-blue-600" />
+              Today&apos;s Water Consumption
+            </h2>
+            <Link
+              href="/dashboard/consumption"
+              className="text-sm font-medium text-blue-600 hover:text-blue-800"
+            >
+              View Details →
+            </Link>
+          </div>
+
+          {consumptionLoading ? (
+            <div className="py-4 text-center">
+              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
+              <p className="mt-2 text-sm text-gray-500">
+                Loading consumption data...
+              </p>
+            </div>
+          ) : consumptionSummary ? (
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              <div className="rounded-lg bg-blue-50 p-3 text-center">
+                <p className="text-sm font-medium text-gray-600">
+                  Today&apos;s Usage
+                </p>
+                <p className="text-lg font-bold text-blue-600">
+                  {consumptionSummary.todayConsumption.toFixed(1)}L
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-green-50 p-3 text-center">
+                <p className="text-sm font-medium text-gray-600">Weekly Avg</p>
+                <p className="text-lg font-bold text-green-600">
+                  {consumptionSummary.weeklyAverage.toFixed(1)}L
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-purple-50 p-3 text-center">
+                <p className="text-sm font-medium text-gray-600">
+                  Monthly Est.
+                </p>
+                <p className="text-lg font-bold text-purple-600">
+                  {(consumptionSummary.monthlyProjection / 1000).toFixed(1)}kL
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-yellow-50 p-3 text-center">
+                <div className="flex items-center justify-center">
+                  <p className="mr-1 text-sm font-medium text-gray-600">
+                    Trend
+                  </p>
+                  {consumptionSummary.trend > 0 ? (
+                    <TrendingUp className="h-3 w-3 text-red-500" />
+                  ) : (
+                    <TrendingDown className="h-3 w-3 text-green-500" />
+                  )}
+                </div>
+                <p
+                  className={`text-lg font-bold ${consumptionSummary.trend > 0 ? 'text-red-600' : 'text-green-600'}`}
+                >
+                  {consumptionSummary.trend > 0 ? '+' : ''}
+                  {consumptionSummary.trend.toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="py-4 text-center">
+              <p className="text-gray-500">Consumption data unavailable</p>
+            </div>
+          )}
         </motion.div>
 
         {/* Quick Actions */}
