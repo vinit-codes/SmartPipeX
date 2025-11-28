@@ -8,7 +8,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📥 [INGEST] Request body:', body);
 
-    if (!body.inputFlow || !body.outputFlow || !body.timestamp) {
+    if (
+      body.inputFlow === undefined ||
+      body.outputFlow === undefined ||
+      !body.timestamp
+    ) {
       return NextResponse.json(
         {
           success: false,

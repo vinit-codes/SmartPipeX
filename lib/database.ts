@@ -252,9 +252,13 @@ export class DatabaseService {
     deviceId?: string
   ): Promise<SensorReadingDocument | null> {
     const query = deviceId ? { deviceId } : {};
+    // For ESP32 devices, sort by receivedAt to get most recently received data
+    // For other devices or general queries, sort by timestamp
+    const sortField =
+      deviceId && deviceId.includes('ESP32') ? 'receivedAt' : 'timestamp';
     return await this.db
       .collection<SensorReadingDocument>('sensor_readings')
-      .findOne(query, { sort: { timestamp: -1 } });
+      .findOne(query, { sort: { [sortField]: -1 } });
   }
 
   /**

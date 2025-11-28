@@ -13,26 +13,45 @@ export async function GET() {
     let source = 'mock';
 
     try {
-      // Try to get latest reading from database
+      // Try to get latest ESP32 reading first
       const dbService = await getDatabaseService();
-      const dbReading = await dbService.getLatestReading();
-      
-      if (dbReading) {
+      const esp32Reading = await dbService.getLatestReading(
+        'ESP32_DEV_PIPELINE_001'
+      );
+
+      if (esp32Reading) {
         latestReading = {
-          timestamp: dbReading.timestamp,
-          inputFlow: dbReading.inputFlow,
-          outputFlow: dbReading.outputFlow,
-          leakDetected: dbReading.leakDetected,
-          waterLoss: dbReading.waterLoss,
-          severity: dbReading.severity,
-          severityScore: dbReading.severityScore,
+          timestamp: esp32Reading.timestamp,
+          inputFlow: esp32Reading.inputFlow,
+          outputFlow: esp32Reading.outputFlow,
+          leakDetected: esp32Reading.leakDetected,
+          waterLoss: esp32Reading.waterLoss,
+          severity: esp32Reading.severity,
+          severityScore: esp32Reading.severityScore,
         };
-        source = 'database';
-        console.log('✅ [LIVE API] Retrieved from MongoDB');
+        source = 'esp32';
+        console.log('✅ [LIVE API] Retrieved ESP32 data from MongoDB');
       } else {
-        // No data in database, use mock
-        latestReading = generateOneSample();
-        console.log('⚠️ [LIVE API] No database data, using mock');
+        // No ESP32 data, try any device data
+        const dbReading = await dbService.getLatestReading();
+
+        if (dbReading) {
+          latestReading = {
+            timestamp: dbReading.timestamp,
+            inputFlow: dbReading.inputFlow,
+            outputFlow: dbReading.outputFlow,
+            leakDetected: dbReading.leakDetected,
+            waterLoss: dbReading.waterLoss,
+            severity: dbReading.severity,
+            severityScore: dbReading.severityScore,
+          };
+          source = 'database';
+          console.log('✅ [LIVE API] Retrieved fallback data from MongoDB');
+        } else {
+          // No data in database, use mock
+          latestReading = generateOneSample();
+          console.log('⚠️ [LIVE API] No database data, using mock');
+        }
       }
     } catch (dbError) {
       // Database unavailable, use mock data
@@ -43,10 +62,10 @@ export async function GET() {
 
     return NextResponse.json(
       ApiResponseHelper.success(
-        { 
-          ...latestReading, 
+        {
+          ...latestReading,
           source,
-          databaseStatus: source === 'database' ? 'connected' : 'unavailable'
+          databaseStatus: source === 'database' ? 'connected' : 'unavailable',
         },
         `Latest sensor reading retrieved successfully from ${source}`
       )
