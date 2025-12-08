@@ -13,6 +13,10 @@ A modern, full-stack web application built with Next.js 14, TypeScript, and Tail
 - **Responsive Design** with modern UI components
 - **Development Tools** configured for optimal workflow
 
+
+## iot demo test youtube link --> https://youtu.be/gSAjCysyyeM
+
+
 ## 📁 Project Structure
 
 ```
