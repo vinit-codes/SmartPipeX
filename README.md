@@ -13,6 +13,7 @@ A modern, full-stack web application built with Next.js 14, TypeScript, and Tail
 - **Responsive Design** with modern UI components
 - **Development Tools** configured for optimal workflow
 
+## project link --> https://smart-pipe-x-git-main-vineeth-kundus-projects.vercel.app/
 
 ## iot demo test youtube link --> https://youtu.be/gSAjCysyyeM
 
