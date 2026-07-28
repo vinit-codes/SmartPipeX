@@ -1,704 +1,255 @@
 'use client';
 
-import { Button, useSensorStream } from '@/components';
-import { formatDate } from '@/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  PWAInstallPrompt,
-  PWAUpdateNotification,
-  PWAStatusBadge,
-} from '@/components/PWAComponents';
-import { useConsumptionSummary } from '@/hooks/useConsumptionSummary';
 import Link from 'next/link';
-import { Droplets, TrendingUp, TrendingDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import {
+  Activity,
+  ArrowRight,
+  Droplets,
+  Gauge,
+  Radio,
+  RefreshCw,
+  ShieldCheck,
+} from 'lucide-react';
+import { useSensorStream } from '@/components';
+import { LeakStatus } from '@/components/dashboard/LeakStatus';
+import { MetricCard } from '@/components/dashboard/MetricCard';
+import { PageHeader } from '@/components/dashboard/PageHeader';
+import { SourceBadge } from '@/components/dashboard/SourceBadge';
+import { Card } from '@/components/ui/Card';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { fetchApi } from '@/lib/client/api';
+import type { ConsumptionSummary, LeakAlert } from '@/lib/types';
 
-// Animation variants
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3 } },
-};
-
-const valueVariants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { duration: 0.4, ease: 'easeOut' as const },
-  },
-};
-
-const pulseVariants = {
-  pulse: {
-    scale: [1, 1.05, 1],
-    transition: { duration: 2, repeat: Infinity },
-  },
-};
-
-// Status indicator component
-function StatusIndicator({
-  isActive,
-  size = 'sm',
-}: {
-  isActive: boolean;
-  size?: 'sm' | 'md' | 'lg';
-}) {
-  const sizeClass =
-    size === 'sm' ? 'h-2 w-2' : size === 'md' ? 'h-3 w-3' : 'h-4 w-4';
-
-  return (
-    <motion.div
-      className={`rounded-full ${sizeClass} ${isActive ? 'bg-green-500' : 'bg-gray-400'}`}
-      variants={isActive ? pulseVariants : {}}
-      animate={isActive ? 'pulse' : 'initial'}
-    />
-  );
+interface AlertsPayload {
+  alerts: LeakAlert[];
+  summary: { total: number; critical: number; medium: number; mild: number };
 }
 
-// Enhanced metric card component
-function MetricCard({
-  title,
-  value,
-  unit,
-  trend,
-  status,
-  icon,
-}: {
-  title: string;
-  value: number;
-  unit: string;
-  trend?: 'up' | 'down' | 'stable';
-  status?: 'normal' | 'warning' | 'critical';
-  icon?: string;
-}) {
-  const getStatusColor = () => {
-    switch (status) {
-      case 'critical':
-        return 'from-red-500 to-red-600 text-white';
-      case 'warning':
-        return 'from-yellow-400 to-yellow-500 text-white';
-      default:
-        return 'from-blue-500 to-blue-600 text-white';
-    }
-  };
-
-  const getTrendIcon = () => {
-    switch (trend) {
-      case 'up':
-        return '↗';
-      case 'down':
-        return '↘';
-      default:
-        return '→';
-    }
-  };
-
-  const getTrendColor = () => {
-    switch (trend) {
-      case 'up':
-        return 'text-green-400';
-      case 'down':
-        return 'text-red-400';
-      default:
-        return 'text-gray-400';
-    }
-  };
-
-  return (
-    <motion.div
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      className={`relative overflow-hidden rounded-xl bg-gradient-to-br ${getStatusColor()} p-6 shadow-lg`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            {icon && <span className="text-2xl">{icon}</span>}
-            <h3 className="text-sm font-medium opacity-90">{title}</h3>
-          </div>
-          <motion.div
-            key={value}
-            variants={valueVariants}
-            initial="hidden"
-            animate="visible"
-            className="mt-2"
-          >
-            <span className="text-3xl font-bold">{value}</span>
-            <span className="ml-1 text-sm opacity-75">{unit}</span>
-          </motion.div>
-        </div>
-        {trend && (
-          <motion.div
-            className={`text-xl ${getTrendColor()}`}
-            animate={{
-              rotateZ: trend === 'up' ? -45 : trend === 'down' ? 45 : 0,
-            }}
-            transition={{ duration: 0.3 }}
-          >
-            {getTrendIcon()}
-          </motion.div>
-        )}
-      </div>
-
-      {/* Animated background effect */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0"
-        animate={{
-          x: ['-100%', '100%'],
-          opacity: [0, 0.1, 0],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          repeatDelay: 2,
-        }}
-      />
-    </motion.div>
-  );
-}
-
-// Leak status banner component
-function LeakStatusBanner({
-  isLeaking,
-  waterLoss,
-}: {
-  isLeaking: boolean;
-  waterLoss: number;
-}) {
-  if (!isLeaking) return null;
-
-  const severity =
-    waterLoss > 2 ? 'critical' : waterLoss > 1 ? 'warning' : 'minor';
-
-  const getBannerStyles = () => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-500 border-red-600';
-      case 'warning':
-        return 'bg-yellow-500 border-yellow-600';
-      default:
-        return 'bg-orange-500 border-orange-600';
-    }
-  };
-
-  return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -50, scale: 0.9 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        exit={{ opacity: 0, y: -50, scale: 0.9 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className={`mb-6 rounded-lg border-2 ${getBannerStyles()} p-4 text-white shadow-lg`}
-      >
-        <motion.div
-          className="flex items-center gap-4"
-          animate={{ x: [0, 5, 0] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
-          <motion.span
-            className="text-3xl"
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1 }}
-          >
-            🚨
-          </motion.span>
-          <div>
-            <h3 className="text-xl font-bold">
-              {severity === 'critical'
-                ? 'CRITICAL LEAK DETECTED'
-                : 'LEAK DETECTED'}
-            </h3>
-            <p className="text-sm opacity-90">
-              Water loss: {waterLoss} L/min - Immediate attention required
-            </p>
-          </div>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
+const flowBars = [
+  { key: 'inputFlow', label: 'Input', barClass: 'bg-sky-500' },
+  { key: 'outputFlow', label: 'Output', barClass: 'bg-emerald-500' },
+] as const;
 
 export default function DashboardPage() {
-  const currentDate = formatDate(new Date());
   const {
     currentReading,
-    previousReading,
     isStreaming,
+    isLoading,
     error,
+    lastUpdated,
     start,
     stop,
-    lastUpdated,
+    refresh,
   } = useSensorStream();
+  const [alerts, setAlerts] = useState<LeakAlert[]>([]);
+  const [consumption, setConsumption] = useState<ConsumptionSummary | null>(null);
 
-  const { summary: consumptionSummary, loading: consumptionLoading } =
-    useConsumptionSummary();
+  useEffect(() => {
+    void Promise.all([
+      fetchApi<AlertsPayload>('/api/data/alerts?count=240'),
+      fetchApi<ConsumptionSummary>('/api/data/consumption?days=7'),
+    ])
+      .then(([alertsPayload, consumptionPayload]) => {
+        setAlerts(alertsPayload.alerts.slice(0, 4));
+        setConsumption(consumptionPayload);
+      })
+      .catch(() => {
+        // Live monitoring remains usable even when secondary widgets fail.
+      });
+  }, []);
 
-  // Use real-time reading or fallback to generated data for display
-  const displayReading = currentReading || {
-    timestamp: new Date().toISOString(),
-    inputFlow: 0,
-    outputFlow: 0,
-    waterLoss: 0,
-    leakDetected: false,
-  };
-
-  // Calculate trends
-  const getTrend = (current: number, previous: number) => {
-    const diff = Math.abs(current - previous);
-    if (diff < 0.01) return 'stable';
-    return current > previous ? 'up' : 'down';
-  };
-
-  const inputTrend = previousReading
-    ? getTrend(displayReading.inputFlow, previousReading.inputFlow)
-    : 'stable';
-  const outputTrend = previousReading
-    ? getTrend(displayReading.outputFlow, previousReading.outputFlow)
-    : 'stable';
-
-  // Determine leak status
-  const getLeakStatus = () => {
-    if (!displayReading.leakDetected) return 'normal';
-    return displayReading.waterLoss > 2 ? 'critical' : 'warning';
-  };
+  const efficiency = currentReading
+    ? currentReading.inputFlow === 0
+      ? 100
+      : (currentReading.outputFlow / currentReading.inputFlow) * 100
+    : 0;
 
   return (
-    <div className="p-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="mx-auto max-w-7xl"
-      >
-        {/* Header Section */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <motion.h1
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-4xl font-bold text-gray-900"
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Operations overview"
+        title="Pipeline monitoring dashboard"
+        description="Live telemetry, current leak state, recent incidents, and delivery efficiency from the monitored pipeline section."
+        action={
+          <div className="flex items-center gap-2">
+            {currentReading?.source && <SourceBadge source={currentReading.source} />}
+            <button
+              type="button"
+              onClick={() => (isStreaming ? stop() : start())}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
             >
-              Pipeline Monitoring Dashboard
-            </motion.h1>
-            <motion.p
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="mt-2 text-gray-600"
+              {isStreaming ? 'Pause stream' : 'Resume stream'}
+            </button>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              className="rounded-lg bg-slate-950 p-2.5 text-white hover:bg-slate-800"
+              aria-label="Refresh live reading"
             >
-              Real-time leak detection system - {currentDate}
-            </motion.p>
+              <RefreshCw className="h-4 w-4" />
+            </button>
+          </div>
+        }
+      />
+
+      {isLoading && !currentReading ? (
+        <Card><LoadingState label="Connecting to the sensor stream" /></Card>
+      ) : error && !currentReading ? (
+        <ErrorState message={error} />
+      ) : currentReading ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard
+              title="Input flow"
+              value={currentReading.inputFlow.toFixed(2)}
+              unit="L/min"
+              description="Measured at the pipeline inlet sensor."
+              icon={Droplets}
+              tone="sky"
+            />
+            <MetricCard
+              title="Output flow"
+              value={currentReading.outputFlow.toFixed(2)}
+              unit="L/min"
+              description="Measured after the monitored section."
+              icon={Activity}
+              tone="emerald"
+            />
+            <MetricCard
+              title="Delivery efficiency"
+              value={efficiency.toFixed(1)}
+              unit="%"
+              description="Output flow as a percentage of input flow."
+              icon={Gauge}
+              tone={efficiency >= 90 ? 'emerald' : 'amber'}
+            />
+            <MetricCard
+              title="Device"
+              value={currentReading.deviceId.replace('ESP32_', '').slice(0, 13)}
+              description={lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Waiting for timestamp'}
+              icon={Radio}
+              tone="sky"
+            />
           </div>
 
-          {/* PWA Status */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4, duration: 0.6 }}
-          >
-            <PWAStatusBadge />
-          </motion.div>
-        </div>
-
-        {/* Leak Alert Banner */}
-        <LeakStatusBanner
-          isLeaking={displayReading.leakDetected}
-          waterLoss={displayReading.waterLoss}
-        />
-
-        {/* Status Bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-          className="mb-8 rounded-xl bg-white p-6 shadow-lg"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <StatusIndicator isActive={isStreaming} size="md" />
-                <span className="text-lg font-semibold text-gray-900">
-                  {isStreaming ? 'Live Stream Active' : 'Stream Inactive'}
+          <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+            <LeakStatus reading={currentReading} />
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-slate-950">Flow comparison</h2>
+                  <p className="mt-1 text-xs text-slate-500">Live inlet versus outlet measurement</p>
+                </div>
+                <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700">
+                  <span className={`h-2 w-2 rounded-full ${isStreaming ? 'animate-pulse bg-emerald-500' : 'bg-slate-300'}`} />
+                  {isStreaming ? 'Streaming' : 'Paused'}
                 </span>
               </div>
-              {lastUpdated && (
-                <motion.span
-                  key={lastUpdated.getTime()}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-full bg-green-50 px-3 py-1 text-sm text-green-700"
-                >
-                  Updated: {lastUpdated.toLocaleTimeString()}
-                </motion.span>
-              )}
-              {error && (
-                <motion.span
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="rounded-full bg-red-50 px-3 py-1 text-sm text-red-700"
-                >
-                  Error: {error}
-                </motion.span>
-              )}
-            </div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button
-                size="sm"
-                variant={isStreaming ? 'outline' : 'primary'}
-                onClick={isStreaming ? stop : start}
-              >
-                {isStreaming ? 'Stop Stream' : 'Start Stream'}
-              </Button>
-            </motion.div>
-          </div>
-        </motion.div>
-
-        {/* Main Metrics Grid */}
-        <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          <MetricCard
-            title="Input Flow"
-            value={displayReading.inputFlow}
-            unit="L/min"
-            trend={inputTrend}
-            icon="🌊"
-            status="normal"
-          />
-
-          <MetricCard
-            title="Output Flow"
-            value={displayReading.outputFlow}
-            unit="L/min"
-            trend={outputTrend}
-            icon="💧"
-            status="normal"
-          />
-
-          <MetricCard
-            title="Water Loss"
-            value={displayReading.waterLoss}
-            unit="L/min"
-            icon="⚠️"
-            status={getLeakStatus()}
-          />
-
-          <MetricCard
-            title="System Efficiency"
-            value={
-              displayReading.inputFlow > 0
-                ? parseFloat(
-                    (
-                      (displayReading.outputFlow / displayReading.inputFlow) *
-                      100
-                    ).toFixed(1)
-                  )
-                : 0
-            }
-            unit="%"
-            icon="📊"
-            status={displayReading.leakDetected ? 'warning' : 'normal'}
-          />
-        </div>
-
-        {/* Real-time Data Visualization */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.6 }}
-          className="mb-8 rounded-xl bg-white p-6 shadow-lg"
-        >
-          <h2 className="mb-6 text-2xl font-bold text-gray-900">
-            Live Pipeline Status
-          </h2>
-
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Flow Visualization */}
-            <div className="lg:col-span-2">
-              <div className="rounded-lg bg-gradient-to-r from-blue-50 to-green-50 p-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Flow Analysis
-                  </h3>
-                  {currentReading && (
-                    <motion.span
-                      key={currentReading.timestamp}
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="rounded-full bg-blue-100 px-3 py-1 text-sm text-blue-700"
-                    >
-                      Live Data
-                    </motion.span>
-                  )}
-                </div>
-
-                <div className="space-y-4">
-                  {/* Input Flow Bar */}
-                  <div>
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="font-medium text-blue-700">
-                        Input Flow
-                      </span>
-                      <span className="text-blue-600">
-                        {displayReading.inputFlow} L/min
-                      </span>
-                    </div>
-                    <div className="h-4 rounded-full bg-blue-100">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-blue-400 to-blue-600"
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: `${Math.min(100, (displayReading.inputFlow / 4) * 100)}%`,
-                        }}
-                        transition={{ duration: 1, ease: 'easeOut' }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Output Flow Bar */}
-                  <div>
-                    <div className="mb-2 flex justify-between text-sm">
-                      <span className="font-medium text-green-700">
-                        Output Flow
-                      </span>
-                      <span className="text-green-600">
-                        {displayReading.outputFlow} L/min
-                      </span>
-                    </div>
-                    <div className="h-4 rounded-full bg-green-100">
-                      <motion.div
-                        className="h-full rounded-full bg-gradient-to-r from-green-400 to-green-600"
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: `${Math.min(100, (displayReading.outputFlow / 4) * 100)}%`,
-                        }}
-                        transition={{
-                          duration: 1,
-                          ease: 'easeOut',
-                          delay: 0.2,
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Water Loss Indicator */}
-                  {displayReading.waterLoss > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                    >
-                      <div className="mb-2 flex justify-between text-sm">
-                        <span className="font-medium text-red-700">
-                          Water Loss
+              <div className="mt-8 space-y-7">
+                {flowBars.map(({ key, label, barClass }) => {
+                  const value = currentReading[key];
+                  const width = Math.min(
+                    100,
+                    (value / Math.max(currentReading.inputFlow, 4)) * 100
+                  );
+                  return (
+                    <div key={key}>
+                      <div className="mb-2 flex items-center justify-between text-sm">
+                        <span className="font-medium text-slate-700">
+                          {label} sensor
                         </span>
-                        <span className="text-red-600">
-                          {displayReading.waterLoss} L/min
+                        <span className="font-semibold text-slate-950">
+                          {value.toFixed(2)} L/min
                         </span>
                       </div>
-                      <div className="h-4 rounded-full bg-red-100">
-                        <motion.div
-                          className="h-full rounded-full bg-gradient-to-r from-red-400 to-red-600"
-                          initial={{ width: 0 }}
-                          animate={{
-                            width: `${Math.min(100, (displayReading.waterLoss / 2) * 100)}%`,
-                          }}
-                          transition={{ duration: 1, ease: 'easeOut' }}
+                      <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className={`h-full rounded-full transition-all duration-700 ${barClass}`}
+                          style={{ width: `${width}%` }}
                         />
                       </div>
-                    </motion.div>
-                  )}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
-
-            {/* Status Panel */}
-            <div className="space-y-4">
-              <div className="rounded-lg bg-gray-50 p-4">
-                <h4 className="mb-3 font-semibold text-gray-800">
-                  System Status
-                </h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Stream Status</span>
-                    <span
-                      className={`text-sm font-medium ${isStreaming ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                      {isStreaming ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">
-                      Leak Detection
-                    </span>
-                    <span
-                      className={`text-sm font-medium ${displayReading.leakDetected ? 'text-red-600' : 'text-green-600'}`}
-                    >
-                      {displayReading.leakDetected ? 'Alert' : 'Normal'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Efficiency</span>
-                    <span className="text-sm font-medium text-blue-600">
-                      {displayReading.inputFlow > 0
-                        ? (
-                            (displayReading.outputFlow /
-                              displayReading.inputFlow) *
-                            100
-                          ).toFixed(1)
-                        : 0}
-                      %
-                    </span>
+              <div className="mt-8 rounded-xl bg-slate-50 p-4">
+                <div className="flex items-center gap-3">
+                  <ShieldCheck className="h-5 w-5 text-sky-700" />
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Threshold-based detection</p>
+                    <p className="mt-1 text-xs leading-5 text-slate-500">A leak is flagged when measured flow loss exceeds the configured 0.30 L/min threshold.</p>
                   </div>
                 </div>
               </div>
+            </Card>
+          </div>
 
-              {currentReading && (
-                <motion.div
-                  key={currentReading.timestamp}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-lg bg-blue-50 p-4"
-                >
-                  <h4 className="mb-2 font-semibold text-blue-900">
-                    Latest Reading
-                  </h4>
-                  <p className="text-xs text-blue-700">
-                    {new Date(currentReading.timestamp).toLocaleString()}
-                  </p>
-                  <motion.div
-                    className={`mt-2 rounded px-2 py-1 text-xs font-medium ${
-                      currentReading.leakDetected
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-green-100 text-green-800'
-                    }`}
-                    animate={
-                      currentReading.leakDetected ? { scale: [1, 1.05, 1] } : {}
-                    }
-                    transition={{
-                      duration: 1,
-                      repeat: currentReading.leakDetected ? Infinity : 0,
-                    }}
-                  >
-                    {currentReading.leakDetected
-                      ? '🚨 Leak Detected'
-                      : '✅ All Systems Normal'}
-                  </motion.div>
-                </motion.div>
+          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-slate-950">Recent leak events</h2>
+                  <p className="mt-1 text-xs text-slate-500">Most recent events from the active data source</p>
+                </div>
+                <Link href="/dashboard/alerts" className="inline-flex items-center text-sm font-semibold text-sky-700 hover:text-sky-900">
+                  View all <ArrowRight className="ml-1 h-4 w-4" />
+                </Link>
+              </div>
+              <div className="mt-5 divide-y divide-slate-100">
+                {alerts.length ? (
+                  alerts.map((alert) => (
+                    <div key={alert.id} className="flex items-center gap-4 py-4 first:pt-0 last:pb-0">
+                      <span className={`h-2.5 w-2.5 rounded-full ${alert.severity === 'critical' ? 'bg-rose-500' : alert.severity === 'medium' ? 'bg-amber-500' : 'bg-sky-500'}`} />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-slate-900">{alert.message}</p>
+                        <p className="mt-1 text-xs text-slate-500">{new Date(alert.timestamp).toLocaleString()}</p>
+                      </div>
+                      <span className="text-sm font-semibold text-slate-700">{alert.waterLoss.toFixed(2)} L/min</span>
+                    </div>
+                  ))
+                ) : (
+                  <p className="py-8 text-center text-sm text-slate-500">No recent leak events.</p>
+                )}
+              </div>
+            </Card>
+
+            <Card className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-slate-950">Water delivery</h2>
+                  <p className="mt-1 text-xs text-slate-500">Seven-day consumption summary</p>
+                </div>
+                <Droplets className="h-5 w-5 text-sky-600" />
+              </div>
+              {consumption ? (
+                <div className="mt-6 grid grid-cols-2 gap-3">
+                  <div className="rounded-xl bg-sky-50 p-4">
+                    <p className="text-xs font-medium text-sky-700">Delivered</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{consumption.summary.totalDelivered.toFixed(0)} L</p>
+                  </div>
+                  <div className="rounded-xl bg-rose-50 p-4">
+                    <p className="text-xs font-medium text-rose-700">Measured loss</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-950">{consumption.summary.totalWaterLoss.toFixed(0)} L</p>
+                  </div>
+                  <div className="col-span-2 rounded-xl border border-slate-200 p-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-500">Overall efficiency</span>
+                      <span className="font-semibold text-slate-950">{consumption.summary.efficiency.toFixed(1)}%</span>
+                    </div>
+                    <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                      <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, consumption.summary.efficiency)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <LoadingState label="Calculating consumption" />
               )}
-            </div>
+            </Card>
           </div>
-        </motion.div>
-
-        {/* Water Consumption Summary */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.9, duration: 0.6 }}
-          className="mb-8 rounded-xl bg-white p-6 shadow-lg"
-        >
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center text-xl font-semibold text-gray-900">
-              <Droplets className="mr-2 h-5 w-5 text-blue-600" />
-              Today&apos;s Water Consumption
-            </h2>
-            <Link
-              href="/dashboard/consumption"
-              className="text-sm font-medium text-blue-600 hover:text-blue-800"
-            >
-              View Details →
-            </Link>
-          </div>
-
-          {consumptionLoading ? (
-            <div className="py-4 text-center">
-              <div className="mx-auto h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
-              <p className="mt-2 text-sm text-gray-500">
-                Loading consumption data...
-              </p>
-            </div>
-          ) : consumptionSummary ? (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <div className="rounded-lg bg-blue-50 p-3 text-center">
-                <p className="text-sm font-medium text-gray-600">
-                  Today&apos;s Usage
-                </p>
-                <p className="text-lg font-bold text-blue-600">
-                  {consumptionSummary.todayConsumption.toFixed(1)}L
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-green-50 p-3 text-center">
-                <p className="text-sm font-medium text-gray-600">Weekly Avg</p>
-                <p className="text-lg font-bold text-green-600">
-                  {consumptionSummary.weeklyAverage.toFixed(1)}L
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-purple-50 p-3 text-center">
-                <p className="text-sm font-medium text-gray-600">
-                  Monthly Est.
-                </p>
-                <p className="text-lg font-bold text-purple-600">
-                  {(consumptionSummary.monthlyProjection / 1000).toFixed(1)}kL
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-yellow-50 p-3 text-center">
-                <div className="flex items-center justify-center">
-                  <p className="mr-1 text-sm font-medium text-gray-600">
-                    Trend
-                  </p>
-                  {consumptionSummary.trend > 0 ? (
-                    <TrendingUp className="h-3 w-3 text-red-500" />
-                  ) : (
-                    <TrendingDown className="h-3 w-3 text-green-500" />
-                  )}
-                </div>
-                <p
-                  className={`text-lg font-bold ${consumptionSummary.trend > 0 ? 'text-red-600' : 'text-green-600'}`}
-                >
-                  {consumptionSummary.trend > 0 ? '+' : ''}
-                  {consumptionSummary.trend.toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="py-4 text-center">
-              <p className="text-gray-500">Consumption data unavailable</p>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 1, duration: 0.6 }}
-          className="rounded-xl bg-white p-6 shadow-lg"
-        >
-          <h2 className="mb-4 text-xl font-semibold text-gray-900">
-            Quick Actions
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="primary">📊 View Reports</Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="secondary">📥 Export Data</Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="outline">⚙️ System Settings</Button>
-            </motion.div>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-              <Button variant="ghost">🔔 Configure Alerts</Button>
-            </motion.div>
-          </div>
-        </motion.div>
-      </motion.div>
-
-      {/* PWA Components */}
-      <PWAInstallPrompt />
-      <PWAUpdateNotification />
+        </>
+      ) : null}
     </div>
   );
 }

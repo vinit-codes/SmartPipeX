@@ -2,180 +2,105 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
 import {
-  LayoutDashboard,
-  BarChart3,
-  AlertTriangle,
-  Settings,
-  Home,
   Activity,
+  BarChart3,
+  BellRing,
   Droplets,
+  Menu,
+  Settings2,
+  X,
 } from 'lucide-react';
-import { clsx } from 'clsx';
+import { useState } from 'react';
+import { cn } from '@/utils';
 
-const navigation = [
-  {
-    name: 'Overview',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-    description: 'Main dashboard',
-  },
-  {
-    name: 'Analytics',
-    href: '/dashboard/analytics',
-    icon: BarChart3,
-    description: 'Charts & insights',
-  },
-  {
-    name: 'Alerts',
-    href: '/dashboard/alerts',
-    icon: AlertTriangle,
-    description: 'System alerts',
-  },
-  {
-    name: 'Consumption',
-    href: '/dashboard/consumption',
-    icon: Droplets,
-    description: 'Water usage tracking',
-  },
-  {
-    name: 'Settings',
-    href: '/dashboard/settings',
-    icon: Settings,
-    description: 'Configuration',
-  },
+const links = [
+  { href: '/dashboard', label: 'Overview', icon: Activity },
+  { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
+  { href: '/dashboard/alerts', label: 'Alerts', icon: BellRing },
+  { href: '/dashboard/consumption', label: 'Consumption', icon: Droplets },
+  { href: '/dashboard/settings', label: 'System', icon: Settings2 },
 ];
 
 export function DashboardNavbar() {
   const pathname = usePathname();
+  const [open, setOpen] = useState(false);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between">
-          {/* Logo/Brand */}
-          <div className="flex items-center">
-            <Link href="/" className="group flex items-center space-x-2">
-              <motion.div
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+    <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <Link href="/" className="flex items-center gap-2.5" aria-label="SmartPipeX home">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-950 text-white shadow-sm">
+            <Droplets className="h-5 w-5" />
+          </span>
+          <span>
+            <span className="block text-sm font-bold tracking-tight text-slate-950">SmartPipeX</span>
+            <span className="block text-[10px] font-medium uppercase tracking-[0.16em] text-slate-400">IoT monitoring</span>
+          </span>
+        </Link>
+
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Dashboard navigation">
+          {links.map(({ href, label, icon: Icon }) => {
+            const active = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={cn(
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                  active
+                    ? 'bg-slate-950 text-white'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-950'
+                )}
               >
-                <Activity className="h-5 w-5 text-white" />
-              </motion.div>
-              <div className="hidden sm:block">
-                <h1 className="text-xl font-bold text-gray-900 transition-colors group-hover:text-blue-600">
-                  SmartPipeX
-                </h1>
-                <p className="-mt-1 text-xs text-gray-500">Pipeline Monitor</p>
-              </div>
-            </Link>
-          </div>
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            );
+          })}
+        </nav>
 
-          {/* Navigation Links */}
-          <div className="flex items-center space-x-1">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname === item.href;
-
-              return (
-                <Link key={item.name} href={item.href}>
-                  <motion.div
-                    className={clsx(
-                      'relative rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200',
-                      'group flex items-center space-x-2',
-                      isActive
-                        ? 'bg-blue-50 text-blue-600'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                    )}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <div className="relative">
-                      <Icon
-                        className={clsx(
-                          'h-4 w-4 transition-colors',
-                          isActive
-                            ? 'text-blue-600'
-                            : 'text-gray-500 group-hover:text-gray-700'
-                        )}
-                      />
-                      {/* Show alert indicator on Alerts tab */}
-                      {item.name === 'Alerts' && (
-                        <motion.div
-                          className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"
-                          animate={{
-                            scale: [1, 1.2, 1],
-                            opacity: [1, 0.8, 1],
-                          }}
-                          transition={{
-                            duration: 2,
-                            repeat: Infinity,
-                            ease: 'easeInOut',
-                          }}
-                        />
-                      )}
-                    </div>
-                    <span className="hidden sm:block">{item.name}</span>
-
-                    {/* Active indicator */}
-                    {isActive && (
-                      <motion.div
-                        className="inset-x0 absolute -bottom-px h-0.5 rounded-full bg-blue-600"
-                        layoutId="navbar-indicator"
-                      />
-                    )}
-                  </motion.div>
-                </Link>
-              );
-            })}
-          </div>
-
-          {/* Quick Status */}
-          <div className="flex items-center space-x-3">
-            {/* System Status Indicator */}
-            <div className="hidden items-center space-x-2 md:flex">
-              <div className="flex items-center space-x-1">
-                <motion.div
-                  className="h-2 w-2 rounded-full bg-green-500"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [1, 0.8, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                />
-                <span className="text-xs text-gray-500">System Online</span>
-              </div>
-            </div>
-
-            {/* Home Button */}
-            <Link href="/">
-              <motion.div
-                className="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="Home"
-              >
-                <Home className="h-5 w-5" />
-              </motion.div>
-            </Link>
-          </div>
+        <div className="flex items-center gap-2">
+          <a
+            href="https://youtu.be/gSAjCysyyeM"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden rounded-lg border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex"
+          >
+            Hardware demo
+          </a>
+          <button
+            type="button"
+            onClick={() => setOpen((value) => !value)}
+            className="rounded-lg border border-slate-200 p-2 text-slate-700 lg:hidden"
+            aria-label="Toggle navigation"
+            aria-expanded={open}
+          >
+            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </div>
       </div>
-    </nav>
-  );
-}
 
-// Mobile Navigation Drawer (for future use)
-export function MobileNavDrawer() {
-  return (
-    <div className="md:hidden">
-      {/* Mobile nav implementation can be added here */}
-    </div>
+      {open && (
+        <nav className="border-t border-slate-100 bg-white px-4 py-3 lg:hidden" aria-label="Mobile dashboard navigation">
+          <div className="mx-auto grid max-w-7xl gap-1">
+            {links.map(({ href, label, icon: Icon }) => (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => setOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium',
+                  pathname === href ? 'bg-slate-950 text-white' : 'text-slate-700 hover:bg-slate-100'
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </Link>
+            ))}
+          </div>
+        </nav>
+      )}
+    </header>
   );
 }

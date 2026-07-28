@@ -1,249 +1,258 @@
-# Leak Detection System
+# SmartPipeX
 
-A modern, full-stack web application built with Next.js 14, TypeScript, and Tailwind CSS. This project demonstrates clean architecture, modern development practices, and a professional development environment setup.
+**Hardware-tested IoT pipeline monitoring with ESP32, Next.js, TypeScript, and MongoDB.**
 
-## 🚀 Features
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
+![ESP32](https://img.shields.io/badge/Hardware-ESP32-E7352C?logo=espressif&logoColor=white)
+![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)
+![Tests](https://img.shields.io/badge/domain_tests-8_passing-16A34A)
+![Licence](https://img.shields.io/badge/licence-MIT-0F172A)
 
-- **Next.js 14** with App Router for optimal performance and developer experience
-- **TypeScript** for type safety and better development experience
-- **Tailwind CSS** for rapid and consistent styling
-- **ESLint + Prettier** for code quality and formatting
-- **Clean Architecture** with organized folder structure
-- **API Routes** with proper error handling and response formatting
-- **Responsive Design** with modern UI components
-- **Development Tools** configured for optimal workflow
+SmartPipeX receives paired inlet and outlet flow readings from an ESP32, calculates water loss, classifies leak severity, persists telemetry, and presents the result through a real-time operational dashboard.
 
-## project link --> https://smart-pipe-x-git-main-vineeth-kundus-projects.vercel.app/
+[Live application](https://smart-pipe-x-git-main-vineeth-kundus-projects.vercel.app/) · [ESP32 hardware demonstration](https://youtu.be/gSAjCysyyeM) · [API documentation](docs/API.md) · [Architecture](docs/ARCHITECTURE.md)
 
-## iot demo test youtube link --> https://youtu.be/gSAjCysyyeM
+> **Demo note:** The hosted dashboard can use clearly labelled simulation data when MongoDB is not configured. The linked video shows the physical ESP32 and flow-sensor integration.
+>
+> **Portfolio scope:** SmartPipeX demonstrates full-stack and IoT engineering. It is not a certified industrial safety system and should not control critical infrastructure without appropriate hardware redundancy, security review, and domain certification.
 
+## 30-second overview
 
-## 📁 Project Structure
+| | |
+| --- | --- |
+| **Problem** | A pipeline leak is observable as a sustained difference between inlet and outlet flow. |
+| **Solution** | Two pulse sensors feed an ESP32, which sends telemetry to a validated ingestion API and an operational dashboard. |
+| **Hardware proof** | The end-to-end path was tested with a physical ESP32 setup; the demonstration is linked below. |
+| **Engineering focus** | Typed contracts, pure domain logic, secure configuration, honest failure behaviour, tests, CI, and deployment documentation. |
 
+## Hardware demonstration
+
+[![Watch the SmartPipeX ESP32 hardware test](https://img.youtube.com/vi/gSAjCysyyeM/maxresdefault.jpg)](https://youtu.be/gSAjCysyyeM)
+
+## Why this project is technically interesting
+
+- Connects **physical ESP32 hardware** to a production-style web application.
+- Keeps leak detection in a **pure, testable domain module** instead of scattering calculations across routes and UI components.
+- Protects device ingestion with a timing-safe **API-key comparison**, strict payload validation, bounded flow values, sanitised device IDs, and timestamp-range checks.
+- Uses a cached **MongoDB connection pool**, typed collections, indexes, device heartbeat updates, and alert persistence.
+- Uses **clearly labelled deterministic simulation data** when MongoDB is not configured. A production database outage fails visibly unless fallback is explicitly enabled for a demo environment.
+- Includes responsive dashboards for live status, historical flow, risk, leak events, and consumption.
+- Runs linting, TypeScript checks, unit tests, and a production build in **GitHub Actions**.
+
+## System architecture
+
+```mermaid
+flowchart LR
+    A[Inlet flow sensor] --> C[ESP32]
+    B[Outlet flow sensor] --> C
+    C -->|HTTPS + x-api-key| D[Next.js ingestion API]
+    D --> E[Leak detection domain service]
+    E --> F[(MongoDB)]
+    F --> G[Read APIs]
+    G --> H[Next.js dashboard]
+    E --> I[Alert record]
 ```
-leak_detection/
-├── app/                    # Next.js App Router directory
-│   ├── dashboard/          # Dashboard pages
-│   │   └── page.tsx
-│   ├── api/                # API routes
-│   │   └── health/
-│   │       └── route.ts
-│   ├── globals.css         # Global styles
-│   ├── layout.tsx          # Root layout
-│   └── page.tsx            # Home page
-├── components/             # Reusable UI components
-│   ├── Button.tsx
-│   └── index.ts
-├── lib/                    # Utility libraries
-│   └── index.ts
-├── utils/                  # Helper functions
-│   └── index.ts
-├── public/                 # Static assets
-├── .eslintrc.json         # ESLint configuration
-├── .prettierrc            # Prettier configuration
-├── tailwind.config.ts     # Tailwind CSS configuration
-└── tsconfig.json          # TypeScript configuration
+
+### Data flow
+
+1. The ESP32 counts pulses from two flow sensors and converts them to litres per minute.
+2. The device sends `inputFlow`, `outputFlow`, `timestamp`, and `deviceId` to `POST /api/ingest`.
+3. The API validates authentication and payload ranges.
+4. The domain service calculates water loss, loss percentage, severity, and a severity score.
+5. MongoDB stores the reading, updates device heartbeat, and creates an alert for detected leaks.
+6. Dashboard routes expose live, historical, alert, consumption, and risk data.
+
+## Product capabilities
+
+| Area | Capability |
+| --- | --- |
+| Live monitoring | Polls the newest reading and shows input, output, efficiency, water loss, and current status |
+| Leak detection | Configurable threshold with mild, medium, and critical classification |
+| Historical analytics | Recent telemetry history and input-versus-output visualisation |
+| Risk analysis | Transparent heuristic using leak frequency, average loss, and critical-event ratio |
+| Alert review | Severity filtering and event-level telemetry |
+| Consumption | Estimated input, delivered volume, water loss, and delivery efficiency |
+| Resilience | Labelled deterministic simulation when MongoDB is not configured, with fail-visible production outage behaviour |
+| PWA | Installable manifest, offline route, icons, and service-worker shell caching |
+
+## Technology stack
+
+- **Frontend:** Next.js 16 App Router, React 19, TypeScript, Tailwind CSS 4, Recharts, Lucide
+- **Backend:** Next.js Route Handlers, MongoDB Node.js driver
+- **Hardware:** ESP32, two pulse-based flow sensors, ArduinoJson, NTP time synchronisation
+- **Quality:** ESLint, Prettier, Node test runner, GitHub Actions
+- **Deployment:** Vercel-compatible serverless application
+
+## Repository structure
+
+```text
+SmartPipeX/
+├── app/
+│   ├── api/                    # Ingestion, telemetry, analytics, and health routes
+│   ├── dashboard/              # Operational dashboard pages
+│   └── page.tsx                # Recruiter-facing project landing page
+├── components/
+│   ├── dashboard/              # Domain-specific visual components
+│   └── ui/                     # Small reusable UI primitives
+├── firmware/
+│   ├── smartpipex_esp32.ino    # ESP32 firmware
+│   └── config.example.h        # Safe hardware configuration template
+├── lib/
+│   ├── client/                 # Typed browser API client
+│   ├── domain/                 # Leak detection, consumption, and simulation logic
+│   ├── server/                 # MongoDB and API helpers
+│   └── types.ts                # Shared API and domain contracts
+├── scripts/                    # Python ESP32 simulator
+├── tests/                      # Domain unit tests
+├── docs/                       # Architecture, API, and hardware documentation
+└── .github/workflows/ci.yml    # Automated quality gate
 ```
 
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Linting**: ESLint
-- **Formatting**: Prettier
-- **Package Manager**: npm
-
-## 📦 Getting Started
+## Local development
 
 ### Prerequisites
 
-Make sure you have the following installed:
+- Node.js 22.10 or newer
+- npm 10 or newer
+- MongoDB 5.0+ (Atlas or local) for hardware ingestion and time-bucket aggregation
 
-- Node.js 18+
-- npm, yarn, or pnpm
-
-### Installation
-
-1. Clone the repository:
+### Setup
 
 ```bash
-git clone <your-repo-url>
-cd leak_detection
-```
+# 1. Clone and enter the repository
+git clone <your-repository-url>
+cd SmartPipeX
 
-2. Install dependencies:
+# 2. Install locked dependencies
+npm ci
 
-```bash
-npm install
-```
+# 3. Create local configuration
+cp .env.example .env.local
 
-3. Start the development server:
-
-```bash
+# 4. Start the development server
 npm run dev
 ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open `http://localhost:3000`.
 
-## 🔧 Available Scripts
+The dashboard works immediately in **simulation mode**. Configure `MONGODB_URI` to store real ESP32 readings.
 
-### Development
+## Environment variables
 
-```bash
-npm run dev          # Start development server
-npm run build        # Build for production
-npm run start        # Start production server
-```
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_APP_URL` | No | Canonical deployment URL used in metadata |
+| `MONGODB_URI` | Hardware mode | MongoDB connection string; never commit this value |
+| `MONGODB_DB` | No | Database name; defaults to `smartpipex` |
+| `INGEST_API_KEY` | Production ingestion | Secret sent by devices in the `x-api-key` header |
+| `ENABLE_SIMULATION_FALLBACK` | No | Allows labelled simulation after a production database failure; keep `false` for real monitoring |
+| `DEFAULT_DEVICE_ID` | No | Restricts dashboard queries to one device when configured |
+| `LEAK_THRESHOLD_LPM` | No | Water-loss threshold; defaults to `0.3` L/min |
 
-### Code Quality
-
-```bash
-npm run lint         # Run ESLint
-npm run lint:fix     # Run ESLint with auto-fix
-npm run format       # Format code with Prettier
-npm run format:check # Check if code is formatted
-npm run type-check   # Run TypeScript type checking
-```
-
-## 🏗️ Development Workflow
-
-### 1. Code Formatting
-
-This project uses Prettier for consistent code formatting. Configuration is in `.prettierrc`:
-
-```json
-{
-  "semi": true,
-  "trailingComma": "es5",
-  "singleQuote": true,
-  "printWidth": 80,
-  "tabWidth": 2,
-  "useTabs": false,
-  "plugins": ["prettier-plugin-tailwindcss"]
-}
-```
-
-### 2. Linting
-
-ESLint is configured with Next.js recommended rules. Run linting with:
+## Send a test reading
 
 ```bash
-npm run lint
+curl -X POST http://localhost:3000/api/ingest \
+  -H 'Content-Type: application/json' \
+  -H 'x-api-key: replace-with-your-key' \
+  -d '{
+    "deviceId": "ESP32_DEV_PIPELINE_001",
+    "timestamp": "2026-07-28T10:00:00.000Z",
+    "inputFlow": 3.42,
+    "outputFlow": 2.61
+  }'
 ```
 
-### 3. Type Checking
-
-TypeScript is configured for strict type checking. Check types with:
-
-```bash
-npm run type-check
-```
-
-## 🎨 Styling Guidelines
-
-### Tailwind CSS
-
-- Use Tailwind utility classes for styling
-- Leverage the `cn()` utility function for conditional classes
-- Follow responsive design principles with Tailwind breakpoints
-
-### Component Structure
-
-```tsx
-import { cn } from '@/utils';
-
-interface ComponentProps {
-  className?: string;
-  children: React.ReactNode;
-}
-
-export function Component({ className, children }: ComponentProps) {
-  return <div className={cn('base-styles', className)}>{children}</div>;
-}
-```
-
-## 🔗 API Routes
-
-### Health Check
-
-```
-GET /api/health
-```
-
-Returns system health status and basic information.
-
-Example response:
+Expected response:
 
 ```json
 {
   "success": true,
   "data": {
-    "status": "healthy",
-    "timestamp": "2024-01-01T00:00:00.000Z",
-    "version": "1.0.0",
-    "uptime": 123.456
+    "deviceId": "ESP32_DEV_PIPELINE_001",
+    "inputFlow": 3.42,
+    "outputFlow": 2.61,
+    "waterLoss": 0.81,
+    "lossPercentage": 23.7,
+    "leakDetected": true,
+    "severity": "medium",
+    "severityScore": 4.9
   },
-  "message": "API is healthy"
+  "meta": {
+    "stored": true
+  }
 }
 ```
 
-## 📚 Key Dependencies
+## Hardware and simulator
 
-### Production
-
-- `next` - React framework
-- `react` & `react-dom` - React library
-- `clsx` - Utility for constructing className strings
-- `tailwind-merge` - Merge Tailwind CSS classes
-
-### Development
-
-- `typescript` - Type checking
-- `eslint` - Code linting
-- `prettier` - Code formatting
-- `@types/*` - Type definitions
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to a Git repository
-2. Import your project on [Vercel](https://vercel.com)
-3. Vercel will automatically detect Next.js and configure the build
-
-### Manual Deployment
+- Follow [docs/HARDWARE.md](docs/HARDWARE.md) for ESP32 wiring, firmware configuration, and deployment.
+- A Python simulator is available for testing the complete ingestion path without physical hardware:
 
 ```bash
-npm run build
-npm run start
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r scripts/requirements.txt
+python scripts/esp32_simulator.py --url http://localhost:3000/api/ingest --once
 ```
 
-## 🤝 Contributing
+## Quality checks
 
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/new-feature`
-3. Make your changes
-4. Run tests and linting: `npm run lint && npm run type-check`
-5. Format code: `npm run format`
-6. Commit your changes: `git commit -m 'Add new feature'`
-7. Push to the branch: `git push origin feature/new-feature`
-8. Submit a pull request
+```bash
+npm run lint
+npm run type-check
+npm test
+npm run format:check
+npm run build
 
-## 📄 License
+# Fast local quality gate (lint + types + tests)
+npm run check
+```
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+The unit tests cover normal variation, critical leaks, sensor drift, reading construction, risk categories, timestamp-aware consumption, and telemetry-gap handling.
 
-## 🆘 Support
+## Engineering decisions
 
-If you encounter any issues or have questions:
+### Transparent risk model instead of misleading AI claims
 
-1. Check the [Next.js Documentation](https://nextjs.org/docs)
-2. Review the [TypeScript Handbook](https://www.typescriptlang.org/docs/)
-3. Browse [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-4. Create an issue in this repository
+The maintenance score is a deterministic heuristic. Its inputs and weights are visible in `lib/domain/leak-detection.ts`, making the result explainable and testable.
 
----
+### Simulation is a fallback, not disguised production data
 
-Built with ❤️ using Next.js, TypeScript, and Tailwind CSS.
-# SmartPipeX
+Read APIs use deterministic simulation when MongoDB is not configured. Every simulated response carries `source: "simulation"`, and the dashboard displays that source. When MongoDB is configured in production, query failures surface as errors unless `ENABLE_SIMULATION_FALLBACK=true` is deliberately set for a demo deployment.
+
+### Device ingestion fails honestly
+
+`POST /api/ingest` returns `503 DATABASE_NOT_CONFIGURED` when persistence is unavailable. It never returns success for a reading that was not stored.
+
+### Secrets stay outside source control
+
+The repository contains `.env.example`, while `.env*` and `firmware/config.h` are ignored. See [SECURITY.md](SECURITY.md) for reporting and deployment guidance.
+
+## Current limitations
+
+- The firmware uses one shared ingestion key; a fleet deployment should provision per-device credentials and signed requests.
+- The ESP32 sends readings directly and does not yet buffer telemetry during a network outage.
+- The dashboard uses polling rather than a WebSocket or message-broker stream.
+- Leak classification is threshold-based and depends on sensor calibration; it is not a substitute for certified industrial instrumentation.
+
+These constraints are intentional and documented rather than hidden behind portfolio claims.
+
+## Further documentation
+
+- [Architecture and design decisions](docs/ARCHITECTURE.md)
+- [REST API reference](docs/API.md)
+- [ESP32 hardware integration](docs/HARDWARE.md)
+- [Contributing guide](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
+
+## Author
+
+**Vineeth Kundu** — Full-stack engineer and founder building production-oriented web, automation, and IoT systems.
+
+[LinkedIn](https://www.linkedin.com/in/vineeth-kundu-99b5222b9/)
+
+## Licence
+
+Released under the [MIT Licence](LICENSE).

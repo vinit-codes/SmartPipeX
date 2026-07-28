@@ -1,496 +1,105 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { Droplets, Gauge, TrendingDown, Waves } from 'lucide-react';
 import {
-  BarChart,
   Bar,
+  BarChart,
+  CartesianGrid,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  Area,
-  AreaChart,
 } from 'recharts';
-import {
-  Droplets,
-  TrendingUp,
-  TrendingDown,
-  Calendar,
-  Activity,
-  Gauge,
-  Clock,
-  Target,
-} from 'lucide-react';
-
-interface ConsumptionData {
-  date: string;
-  totalConsumption: number;
-  averageFlow: number;
-  peakFlow: number;
-  activeHours: number;
-  efficiency: number;
-}
-
-interface ConsumptionSummary {
-  period: string;
-  totalConsumption: number;
-  dailyAverage: number;
-  weeklyTrend: number;
-  monthlyProjection: number;
-  efficiency: number;
-  comparedToLastPeriod: number;
-}
-
-interface ConsumptionResponse {
-  consumption: ConsumptionData[];
-  summary: ConsumptionSummary;
-  source: string;
-  period: string;
-  days: number;
-}
+import { MetricCard } from '@/components/dashboard/MetricCard';
+import { PageHeader } from '@/components/dashboard/PageHeader';
+import { SourceBadge } from '@/components/dashboard/SourceBadge';
+import { Card } from '@/components/ui/Card';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { LoadingState } from '@/components/ui/LoadingState';
+import { fetchApi } from '@/lib/client/api';
+import type { ConsumptionSummary } from '@/lib/types';
 
 export default function ConsumptionPage() {
-  const [consumptionData, setConsumptionData] = useState<ConsumptionData[]>([]);
-  const [summary, setSummary] = useState<ConsumptionSummary | null>(null);
-  const [source, setSource] = useState<string>('');
+  const [data, setData] = useState<ConsumptionSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [period, setPeriod] = useState<'daily' | 'weekly' | 'monthly'>('daily');
-  const [days, setDays] = useState(7);
-
-  const fetchConsumptionData = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `/api/data/consumption?period=${period}&days=${days}`
-      );
-      const result = await response.json();
-
-      if (result.success) {
-        setConsumptionData(result.data.consumption);
-        setSummary(result.data.summary);
-        setSource(result.data.source);
-      } else {
-        setError(result.error || 'Failed to fetch consumption data');
-      }
-    } catch (err) {
-      setError('Network error while fetching consumption data');
-      console.error('Consumption data fetch error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchConsumptionData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, days]);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-  };
-
-  const formatConsumption = (value: number) => {
-    return `${value.toFixed(1)}L`;
-  };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading consumption data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="mb-4 text-xl text-red-500">⚠️ Error</div>
-          <p className="text-gray-600">{error}</p>
-          <button
-            onClick={fetchConsumptionData}
-            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+    void fetchApi<ConsumptionSummary>('/api/data/consumption?days=7')
+      .then(setData)
+      .catch((requestError) => {
+        setError(requestError instanceof Error ? requestError.message : 'Unable to load consumption.');
+      })
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="mb-2 text-3xl font-bold text-gray-900">
-                Water Consumption
-              </h1>
-              <p className="text-gray-600">
-                Track your daily water usage and consumption patterns
-                <span className="ml-2 rounded bg-blue-100 px-2 py-1 text-sm text-blue-800">
-                  {source === 'esp32' ? '🔴 Live ESP32 Data' : '🟡 Demo Data'}
-                </span>
-              </p>
-            </div>
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Water accounting"
+        title="Consumption and delivery efficiency"
+        description="Estimate how much water entered the monitored section, how much reached the outlet, and how much was lost between both sensors."
+        action={data ? <SourceBadge source={data.source} /> : undefined}
+      />
 
-            {/* Period Controls */}
-            <div className="mt-4 flex gap-4 md:mt-0">
-              <select
-                value={period}
-                onChange={(e) =>
-                  setPeriod(e.target.value as 'daily' | 'weekly' | 'monthly')
-                }
-                className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="daily">Daily</option>
-                <option value="weekly">Weekly</option>
-                <option value="monthly">Monthly</option>
-              </select>
-
-              <select
-                value={days}
-                onChange={(e) => setDays(parseInt(e.target.value))}
-                className="rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:ring-2 focus:ring-blue-500"
-              >
-                <option value={7}>Last 7 days</option>
-                <option value={14}>Last 14 days</option>
-                <option value={30}>Last 30 days</option>
-                <option value={60}>Last 60 days</option>
-              </select>
-            </div>
+      {loading ? (
+        <Card><LoadingState label="Calculating water delivery" /></Card>
+      ) : error ? (
+        <ErrorState message={error} />
+      ) : data ? (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <MetricCard title="Input volume" value={data.summary.totalInput.toFixed(0)} unit="L" description="Estimated volume measured at the inlet." icon={Waves} tone="sky" />
+            <MetricCard title="Delivered volume" value={data.summary.totalDelivered.toFixed(0)} unit="L" description="Estimated volume measured at the outlet." icon={Droplets} tone="emerald" />
+            <MetricCard title="Measured loss" value={data.summary.totalWaterLoss.toFixed(0)} unit="L" description="Difference between estimated input and output volume." icon={TrendingDown} tone="rose" />
+            <MetricCard title="Efficiency" value={data.summary.efficiency.toFixed(1)} unit="%" description="Delivered volume divided by inlet volume." icon={Gauge} tone={data.summary.efficiency >= 90 ? 'emerald' : 'amber'} />
           </div>
-        </motion.div>
 
-        {/* Summary Cards */}
-        {summary && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
-          >
-            {/* Total Consumption */}
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Total Consumption
-                  </p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">
-                    {formatConsumption(summary.totalConsumption)}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-blue-100 p-3">
-                  <Droplets className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
+          <Card className="p-5 sm:p-6">
+            <div>
+              <h2 className="font-semibold text-slate-950">Daily volume comparison</h2>
+              <p className="mt-1 text-xs text-slate-500">Estimated litres from five-minute flow readings</p>
             </div>
-
-            {/* Daily Average */}
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Daily Average
-                  </p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">
-                    {formatConsumption(summary.dailyAverage)}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-green-100 p-3">
-                  <Calendar className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
+            <div className="mt-6 h-[380px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.consumption} margin={{ top: 8, right: 12, left: -8, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="4 4" vertical={false} stroke="#e2e8f0" />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickLine={false} axisLine={false} unit=" L" />
+                  <Tooltip
+                    contentStyle={{ borderRadius: 12, border: '1px solid #e2e8f0', boxShadow: '0 10px 30px rgba(15,23,42,0.08)' }}
+                    formatter={(value) => `${Number(value).toFixed(0)} L`}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: 12, paddingTop: 14 }} />
+                  <Bar dataKey="inputVolume" name="Input volume" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="deliveredVolume" name="Delivered volume" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="waterLoss" name="Measured loss" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
+          </Card>
 
-            {/* Trend */}
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Trend</p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">
-                    {summary.weeklyTrend > 0 ? '+' : ''}
-                    {summary.weeklyTrend.toFixed(1)}%
-                  </p>
+          <div className="grid gap-6 lg:grid-cols-3">
+            {data.consumption.map((point) => (
+              <Card key={point.label} className="p-5">
+                <div className="flex items-center justify-between">
+                  <p className="font-semibold text-slate-950">{point.label}</p>
+                  <span className={`text-sm font-semibold ${point.efficiency >= 90 ? 'text-emerald-700' : 'text-amber-700'}`}>{point.efficiency.toFixed(1)}%</span>
                 </div>
-                <div
-                  className={`rounded-lg p-3 ${summary.weeklyTrend > 0 ? 'bg-red-100' : 'bg-green-100'}`}
-                >
-                  {summary.weeklyTrend > 0 ? (
-                    <TrendingUp className="h-6 w-6 text-red-600" />
-                  ) : (
-                    <TrendingDown className="h-6 w-6 text-green-600" />
-                  )}
+                <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100">
+                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, point.efficiency)}%` }} />
                 </div>
-              </div>
-            </div>
-
-            {/* Efficiency */}
-            <div className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">
-                    Efficiency
-                  </p>
-                  <p className="mt-1 text-2xl font-bold text-gray-900">
-                    {summary.efficiency.toFixed(1)}%
-                  </p>
-                </div>
-                <div className="rounded-lg bg-purple-100 p-3">
-                  <Gauge className="h-6 w-6 text-purple-600" />
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Charts */}
-        <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Daily Consumption Chart */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-          >
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Daily Consumption
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={consumptionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  fontSize={12}
-                />
-                <YAxis fontSize={12} />
-                <Tooltip
-                  formatter={(value: number) => [
-                    formatConsumption(value),
-                    'Consumption',
-                  ]}
-                  labelFormatter={(label) => formatDate(label)}
-                />
-                <Bar
-                  dataKey="totalConsumption"
-                  fill="#3B82F6"
-                  radius={[4, 4, 0, 0]}
-                />
-              </BarChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Flow Rate Trends */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-          >
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Flow Rate Analysis
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={consumptionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  fontSize={12}
-                />
-                <YAxis fontSize={12} />
-                <Tooltip
-                  formatter={(value: number, name: string) => [
-                    `${value.toFixed(1)} L/min`,
-                    name === 'averageFlow' ? 'Average Flow' : 'Peak Flow',
-                  ]}
-                  labelFormatter={(label) => formatDate(label)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="averageFlow"
-                  stroke="#10B981"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="peakFlow"
-                  stroke="#F59E0B"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
-
-        {/* Usage Patterns */}
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-          {/* Active Hours */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-          >
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              Daily Active Hours
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={consumptionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  fontSize={12}
-                />
-                <YAxis fontSize={12} />
-                <Tooltip
-                  formatter={(value: number) => [
-                    `${value.toFixed(1)} hours`,
-                    'Active Hours',
-                  ]}
-                  labelFormatter={(label) => formatDate(label)}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="activeHours"
-                  stroke="#8B5CF6"
-                  fill="#8B5CF6"
-                  fillOpacity={0.3}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </motion.div>
-
-          {/* Efficiency Trend */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-          >
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              System Efficiency
-            </h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={consumptionData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={formatDate}
-                  fontSize={12}
-                />
-                <YAxis domain={[90, 100]} fontSize={12} />
-                <Tooltip
-                  formatter={(value: number) => [
-                    `${value.toFixed(1)}%`,
-                    'Efficiency',
-                  ]}
-                  labelFormatter={(label) => formatDate(label)}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="efficiency"
-                  stroke="#EC4899"
-                  strokeWidth={3}
-                  dot={{ r: 4 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </motion.div>
-        </div>
-
-        {/* Insights */}
-        {summary && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="mt-8 rounded-xl border border-gray-100 bg-white p-6 shadow-sm"
-          >
-            <h3 className="mb-4 text-lg font-semibold text-gray-900">
-              💡 Smart Insights
-            </h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-              <div className="rounded-lg bg-blue-50 p-4">
-                <div className="mb-2 flex items-center">
-                  <Target className="mr-2 h-5 w-5 text-blue-600" />
-                  <span className="font-medium text-blue-900">
-                    Monthly Projection
-                  </span>
-                </div>
-                <p className="text-sm text-blue-800">
-                  At current usage, you&apos;ll consume approximately{' '}
-                  <strong>
-                    {formatConsumption(summary.monthlyProjection)}
-                  </strong>{' '}
-                  this month.
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-green-50 p-4">
-                <div className="mb-2 flex items-center">
-                  <Activity className="mr-2 h-5 w-5 text-green-600" />
-                  <span className="font-medium text-green-900">
-                    Efficiency Status
-                  </span>
-                </div>
-                <p className="text-sm text-green-800">
-                  Your system efficiency is{' '}
-                  <strong>{summary.efficiency.toFixed(1)}%</strong> -
-                  {summary.efficiency > 98
-                    ? ' Excellent!'
-                    : summary.efficiency > 95
-                      ? ' Good'
-                      : ' Needs attention'}
-                </p>
-              </div>
-
-              <div className="rounded-lg bg-purple-50 p-4">
-                <div className="mb-2 flex items-center">
-                  <Clock className="mr-2 h-5 w-5 text-purple-600" />
-                  <span className="font-medium text-purple-900">
-                    Usage Pattern
-                  </span>
-                </div>
-                <p className="text-sm text-purple-800">
-                  Your consumption trend is
-                  <strong>
-                    {' '}
-                    {summary.weeklyTrend > 0 ? 'increasing' : 'decreasing'}
-                  </strong>{' '}
-                  by
-                  {Math.abs(summary.weeklyTrend).toFixed(1)}% recently.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </div>
+                <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
+                  <div><dt className="text-xs text-slate-500">Delivered</dt><dd className="mt-1 font-semibold text-slate-900">{point.deliveredVolume.toFixed(0)} L</dd></div>
+                  <div><dt className="text-xs text-slate-500">Loss</dt><dd className="mt-1 font-semibold text-rose-700">{point.waterLoss.toFixed(0)} L</dd></div>
+                </dl>
+              </Card>
+            ))}
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

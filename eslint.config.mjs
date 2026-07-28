@@ -14,7 +14,6 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     // PWA and utility files:
     'public/sw.js',
-    'generate-pwa-icons.js',
   ]),
 ]);
 

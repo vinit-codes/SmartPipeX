@@ -1,165 +1,135 @@
 'use client';
 
-import React, {
+import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useRef,
   useState,
-  useCallback,
+  type ReactNode,
 } from 'react';
-import { SensorReading } from '@/lib/mockData';
+import { fetchApi } from '@/lib/client/api';
+import type { SensorReading } from '@/lib/types';
 
-interface SensorStreamContextType {
+interface SensorStreamContextValue {
   currentReading: SensorReading | null;
   previousReading: SensorReading | null;
   isStreaming: boolean;
+  isLoading: boolean;
   error: string | null;
+  lastUpdated: Date | null;
   start: () => void;
   stop: () => void;
-  lastUpdated: Date | null;
+  refresh: () => Promise<void>;
 }
 
-const SensorStreamContext = createContext<SensorStreamContextType | undefined>(
-  undefined
-);
-
-interface SensorStreamProviderProps {
-  children: React.ReactNode;
-  autoStart?: boolean;
-  interval?: number;
-}
+const SensorStreamContext = createContext<SensorStreamContextValue | null>(null);
 
 export function SensorStreamProvider({
   children,
-  autoStart = true,
-  interval = 1000,
-}: SensorStreamProviderProps) {
-  const [currentReading, setCurrentReading] = useState<SensorReading | null>(
-    null
-  );
+  interval = 5_000,
+}: {
+  children: ReactNode;
+  interval?: number;
+}) {
+  const [currentReading, setCurrentReading] = useState<SensorReading | null>(null);
   const [previousReading, setPreviousReading] = useState<SensorReading | null>(
     null
   );
-  const [isStreaming, setIsStreaming] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const mounted = useRef(true);
+  const currentReadingRef = useRef<SensorReading | null>(null);
 
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isMountedRef = useRef(true);
-
-  const fetchLiveData = useCallback(async () => {
+  const refresh = useCallback(async () => {
     try {
-      const response = await fetch('/api/data/live');
-      const result = await response.json();
+      const reading = await fetchApi<SensorReading>('/api/data/live', {
+        cache: 'no-store',
+      });
+      if (!mounted.current) return;
 
-      if (!isMountedRef.current) return; // Prevent state updates if unmounted
-
-      if (result.success && result.data) {
-        setPreviousReading((prev) => prev);
-        setCurrentReading((prev) => {
-          setPreviousReading(prev);
-          return result.data;
-        });
-        setLastUpdated(new Date());
-        setError(null);
-      } else {
-        setError(result.error || 'Failed to fetch sensor data');
-      }
-    } catch (err) {
-      if (!isMountedRef.current) return;
-
-      const errorMessage = err instanceof Error ? err.message : 'Network error';
-      setError(errorMessage);
-      console.error('Error fetching live sensor data:', err);
+      setPreviousReading(currentReadingRef.current);
+      currentReadingRef.current = reading;
+      setCurrentReading(reading);
+      setLastUpdated(new Date());
+      setError(null);
+    } catch (requestError) {
+      if (!mounted.current) return;
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to load live sensor data.'
+      );
+    } finally {
+      if (mounted.current) setIsLoading(false);
     }
   }, []);
 
-  const stop = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-    setIsStreaming(false);
-  }, []);
-
-  const start = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
-
-    setIsStreaming(true);
-    setError(null);
-
-    // Fetch immediately
-    fetchLiveData();
-
-    // Set up interval
-    intervalRef.current = setInterval(fetchLiveData, interval);
-  }, [fetchLiveData, interval]);
-
-  // Auto-start on mount and handle cleanup
   useEffect(() => {
-    isMountedRef.current = true;
-
-    if (autoStart) {
-      const timer = setTimeout(() => {
-        start();
-      }, 0);
-
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [autoStart, start]);
-
-  // Cleanup on unmount
-  useEffect(() => {
+    mounted.current = true;
     return () => {
-      isMountedRef.current = false;
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-      }
+      mounted.current = false;
     };
   }, []);
 
-  // Update interval when it changes
   useEffect(() => {
-    if (isStreaming) {
-      const timer = setTimeout(() => {
-        stop();
-        start();
-      }, 0);
+    if (!isStreaming) return;
 
-      return () => {
-        clearTimeout(timer);
-      };
-    }
-  }, [interval, isStreaming, stop, start]);
+    let cancelled = false;
+    let timer: number | undefined;
 
-  const contextValue: SensorStreamContextType = {
-    currentReading,
-    previousReading,
-    isStreaming,
-    error,
-    start,
-    stop,
-    lastUpdated,
-  };
+    const poll = async () => {
+      await refresh();
+      if (!cancelled) {
+        timer = window.setTimeout(() => void poll(), interval);
+      }
+    };
+
+    void poll();
+    return () => {
+      cancelled = true;
+      if (timer !== undefined) window.clearTimeout(timer);
+    };
+  }, [interval, isStreaming, refresh]);
+
+  const value = useMemo<SensorStreamContextValue>(
+    () => ({
+      currentReading,
+      previousReading,
+      isStreaming,
+      isLoading,
+      error,
+      lastUpdated,
+      start: () => setIsStreaming(true),
+      stop: () => setIsStreaming(false),
+      refresh,
+    }),
+    [
+      currentReading,
+      previousReading,
+      isStreaming,
+      isLoading,
+      error,
+      lastUpdated,
+      refresh,
+    ]
+  );
 
   return (
-    <SensorStreamContext.Provider value={contextValue}>
+    <SensorStreamContext.Provider value={value}>
       {children}
     </SensorStreamContext.Provider>
   );
 }
 
-export function useSensorStream(): SensorStreamContextType {
+export function useSensorStream() {
   const context = useContext(SensorStreamContext);
-  if (context === undefined) {
-    throw new Error(
-      'useSensorStream must be used within a SensorStreamProvider'
-    );
+  if (!context) {
+    throw new Error('useSensorStream must be used inside SensorStreamProvider');
   }
   return context;
 }

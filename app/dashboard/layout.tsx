@@ -1,22 +1,12 @@
-import {
-  SensorStreamProvider,
-  DashboardNavbar,
-  Breadcrumbs,
-} from '@/components';
+import { Breadcrumbs, DashboardNavbar, SensorStreamProvider } from '@/components';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <SensorStreamProvider autoStart={true} interval={1000}>
-      <div className="min-h-screen bg-gray-50">
+    <SensorStreamProvider>
+      <div className="min-h-screen bg-slate-50">
         <DashboardNavbar />
-        <main className="flex-1">
-          <div className="mx-auto max-w-7xl px-8 pt-6">
-            <Breadcrumbs />
-          </div>
+        <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
+          <Breadcrumbs />
           {children}
         </main>
       </div>
