@@ -291,7 +291,7 @@ These constraints are intentional and documented rather than hidden behind portf
 
 ## Author
 
-**Vineeth Kundu** — Full-stack engineer and founder building production-oriented web, automation, and IoT systems.
+**Vineeth Kundu** — Full-stack engineer and founder building production-oriented web, automation.
 
 [LinkedIn](https://www.linkedin.com/in/vineeth-kundu-99b5222b9/)
 
