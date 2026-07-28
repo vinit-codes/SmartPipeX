@@ -1,30 +1,72 @@
 # SmartPipeX
 
-**Hardware-tested IoT pipeline monitoring with ESP32, Next.js, TypeScript, and MongoDB.**
+**Hardware-tested IoT pipeline monitoring platform built with ESP32, Next.js, TypeScript, and MongoDB.**
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?logo=nextdotjs)
 ![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?logo=typescript&logoColor=white)
 ![ESP32](https://img.shields.io/badge/Hardware-ESP32-E7352C?logo=espressif&logoColor=white)
 ![MongoDB](https://img.shields.io/badge/Database-MongoDB-47A248?logo=mongodb&logoColor=white)
 ![Tests](https://img.shields.io/badge/domain_tests-8_passing-16A34A)
-![Licence](https://img.shields.io/badge/licence-MIT-0F172A)
+![License](https://img.shields.io/badge/license-MIT-0F172A)
 
-SmartPipeX receives paired inlet and outlet flow readings from an ESP32, calculates water loss, classifies leak severity, persists telemetry, and presents the result through a real-time operational dashboard.
+SmartPipeX is an end-to-end IoT monitoring platform that receives paired inlet and outlet flow readings from an ESP32, detects pipeline leaks, calculates water loss, stores telemetry in MongoDB, and visualises real-time operational insights through a modern dashboard.
 
-[Live application](https://smart-pipe-x-git-main-vineeth-kundus-projects.vercel.app/) · [ESP32 hardware demonstration](https://youtu.be/gSAjCysyyeM) · [API documentation](docs/API.md) · [Architecture](docs/ARCHITECTURE.md)
+---
 
-> **Demo note:** The hosted dashboard can use clearly labelled simulation data when MongoDB is not configured. The linked video shows the physical ESP32 and flow-sensor integration.
+## 🚀 Live Demo
+
+🌐 **Website:** https://smartpipex.vercel.app/
+
+🎥 **Hardware Demonstration:** https://youtu.be/gSAjCysyyeM
+
+📖 **API Documentation:** `docs/API.md`
+
+🏗️ **Architecture:** `docs/ARCHITECTURE.md`
+
+---
+
+> **Demo Note**
 >
-> **Portfolio scope:** SmartPipeX demonstrates full-stack and IoT engineering. It is not a certified industrial safety system and should not control critical infrastructure without appropriate hardware redundancy, security review, and domain certification.
+> The public website runs in **Simulation Mode** because a production MongoDB instance is intentionally not exposed.
+>
+> The linked hardware demonstration shows SmartPipeX operating with a **real ESP32**, **dual flow sensors**, and the complete telemetry pipeline from physical hardware to the monitoring dashboard.
+>
+> This allows anyone reviewing the project to experience the dashboard while also verifying that the system has been tested on real hardware.
+
+> **Portfolio Scope**
+>
+> SmartPipeX demonstrates production-oriented full-stack engineering, IoT integration, REST APIs, telemetry processing, dashboard development, and system architecture.
+>
+> It is a portfolio project and **not** a certified industrial safety system.
+
+---
+
+## ✨ Key Features
+
+- Real-time pipeline monitoring dashboard
+- Hardware-tested ESP32 integration
+- Secure telemetry ingestion API
+- Water leak detection engine
+- Historical analytics and risk scoring
+- Alert management system
+- Consumption tracking
+- MongoDB persistence
+- Progressive Web App (PWA)
+- ESP32 simulator for local development
+- Fully documented architecture and REST API
+- GitHub Actions CI
+- Responsive dashboard for desktop and mobile
+
+---
 
 ## 30-second overview
 
-| | |
-| --- | --- |
-| **Problem** | A pipeline leak is observable as a sustained difference between inlet and outlet flow. |
-| **Solution** | Two pulse sensors feed an ESP32, which sends telemetry to a validated ingestion API and an operational dashboard. |
-| **Hardware proof** | The end-to-end path was tested with a physical ESP32 setup; the demonstration is linked below. |
-| **Engineering focus** | Typed contracts, pure domain logic, secure configuration, honest failure behaviour, tests, CI, and deployment documentation. |
+|                         |                                                                                                                                   |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **Problem**             | Pipeline leaks are detected by monitoring sustained differences between inlet and outlet water flow.                              |
+| **Solution**            | ESP32 receives readings from two flow sensors and securely sends telemetry to a Next.js backend for analysis and visualisation.   |
+| **Hardware Validation** | The complete system has been tested using a physical ESP32 with dual flow sensors.                                                |
+| **Engineering Focus**   | Clean architecture, secure APIs, typed contracts, testable domain logic, documentation, CI/CD, and production-ready code quality. |
 
 ## Hardware demonstration
 
@@ -65,16 +107,16 @@ flowchart LR
 
 ## Product capabilities
 
-| Area | Capability |
-| --- | --- |
-| Live monitoring | Polls the newest reading and shows input, output, efficiency, water loss, and current status |
-| Leak detection | Configurable threshold with mild, medium, and critical classification |
-| Historical analytics | Recent telemetry history and input-versus-output visualisation |
-| Risk analysis | Transparent heuristic using leak frequency, average loss, and critical-event ratio |
-| Alert review | Severity filtering and event-level telemetry |
-| Consumption | Estimated input, delivered volume, water loss, and delivery efficiency |
-| Resilience | Labelled deterministic simulation when MongoDB is not configured, with fail-visible production outage behaviour |
-| PWA | Installable manifest, offline route, icons, and service-worker shell caching |
+| Area                 | Capability                                                                                                      |
+| -------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Live monitoring      | Polls the newest reading and shows input, output, efficiency, water loss, and current status                    |
+| Leak detection       | Configurable threshold with mild, medium, and critical classification                                           |
+| Historical analytics | Recent telemetry history and input-versus-output visualisation                                                  |
+| Risk analysis        | Transparent heuristic using leak frequency, average loss, and critical-event ratio                              |
+| Alert review         | Severity filtering and event-level telemetry                                                                    |
+| Consumption          | Estimated input, delivered volume, water loss, and delivery efficiency                                          |
+| Resilience           | Labelled deterministic simulation when MongoDB is not configured, with fail-visible production outage behaviour |
+| PWA                  | Installable manifest, offline route, icons, and service-worker shell caching                                    |
 
 ## Technology stack
 
@@ -140,15 +182,15 @@ The dashboard works immediately in **simulation mode**. Configure `MONGODB_URI` 
 
 ## Environment variables
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | No | Canonical deployment URL used in metadata |
-| `MONGODB_URI` | Hardware mode | MongoDB connection string; never commit this value |
-| `MONGODB_DB` | No | Database name; defaults to `smartpipex` |
-| `INGEST_API_KEY` | Production ingestion | Secret sent by devices in the `x-api-key` header |
-| `ENABLE_SIMULATION_FALLBACK` | No | Allows labelled simulation after a production database failure; keep `false` for real monitoring |
-| `DEFAULT_DEVICE_ID` | No | Restricts dashboard queries to one device when configured |
-| `LEAK_THRESHOLD_LPM` | No | Water-loss threshold; defaults to `0.3` L/min |
+| Variable                     | Required             | Purpose                                                                                          |
+| ---------------------------- | -------------------- | ------------------------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_APP_URL`        | No                   | Canonical deployment URL used in metadata                                                        |
+| `MONGODB_URI`                | Hardware mode        | MongoDB connection string; never commit this value                                               |
+| `MONGODB_DB`                 | No                   | Database name; defaults to `smartpipex`                                                          |
+| `INGEST_API_KEY`             | Production ingestion | Secret sent by devices in the `x-api-key` header                                                 |
+| `ENABLE_SIMULATION_FALLBACK` | No                   | Allows labelled simulation after a production database failure; keep `false` for real monitoring |
+| `DEFAULT_DEVICE_ID`          | No                   | Restricts dashboard queries to one device when configured                                        |
+| `LEAK_THRESHOLD_LPM`         | No                   | Water-loss threshold; defaults to `0.3` L/min                                                    |
 
 ## Send a test reading
 
